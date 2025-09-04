@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./App.css";
 import "./Face.css";
 import { Camera } from "react-camera-pro";
@@ -16,6 +16,9 @@ function App() {
     let video = useRef(null);
     let canvas = useRef(null);
     let canvasctx = useRef(null);
+
+    const [devices, setDevices] = useState([]);
+    const [activeDeviceId, setActiveDeviceId] = useState(undefined);
 
     const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
     const detectorConfig = {
@@ -59,10 +62,50 @@ function App() {
         requestAnimationFrame(drawVideo);
     };
 
+    useEffect(() => {
+        (async () => {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter((i) => i.kind == "videoinput");
+            setDevices(videoDevices);
+
+            // try {
+            //     const permissionsStatus = await navigator.permissions.query({
+            //         name: "camera",
+            //     });
+            //     let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            //     // console.log(stream);
+            // } catch (er) {
+            //     console.log(er);
+            // }
+        })();
+    });
+
     return (
         <>
+            <h1>Face Detector</h1>
+            <a href="/">Back</a>
             <div>
-                <Camera ref={camera} numberOfCamerasCallback={setNumberOfCameras} aspectRatio={4 / 3} />
+                <select
+                    onChange={(event) => {
+                        setActiveDeviceId(event.target.value);
+                    }}
+                >
+                    {devices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                            {d.label}
+                        </option>
+                    ))}
+                </select>
+                <text>{activeDeviceId}</text>
+                <Camera
+                    ref={camera}
+                    numberOfCamerasCallback={setNumberOfCameras}
+                    aspectRatio={4 / 3}
+                    videoSourceDeviceId={activeDeviceId}
+                    videoReadyCallback={() => {
+                        console.log("Video feed ready.");
+                    }}
+                />
                 <button
                     hidden={numberOfCameras <= 1}
                     onClick={() => {

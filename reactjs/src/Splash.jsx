@@ -13,6 +13,9 @@ function App() {
                 <li>
                     <a href="/Menu">Menu</a>
                 </li>
+                <li>
+                    <a href="/Face">Face Detector</a>
+                </li>
             </ul>
         </>
     );

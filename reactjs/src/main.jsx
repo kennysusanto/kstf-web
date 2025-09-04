@@ -6,6 +6,7 @@ import "./index.css";
 import App from "./App.jsx";
 import Splash from "./Splash.jsx";
 import Menu from "./Menu.jsx";
+import Face from "./Face.jsx";
 
 const router = createBrowserRouter([
     {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
     {
         path: "/Menu",
         element: <Menu />,
+    },
+    {
+        path: "/Face",
+        element: <Face />,
     },
 ]);
 
