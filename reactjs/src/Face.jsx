@@ -32,10 +32,13 @@ function App() {
         console.log(camera);
         video = document.getElementById("video");
         canvas = document.getElementById("mycanvas");
+        // canvas = video.nextElementSibling;
+        // canvas.style.display = "block";
         canvasctx = canvas.getContext("2d");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         //drawVideo();
+        // video.style.visibility = "hidden";
 
         detector = await faceDetection.createDetector(model, detectorConfig);
         drawVideo();
@@ -97,15 +100,18 @@ function App() {
                     ))}
                 </select>
                 <text>{activeDeviceId}</text>
-                <Camera
-                    ref={camera}
-                    numberOfCamerasCallback={setNumberOfCameras}
-                    aspectRatio={4 / 3}
-                    videoSourceDeviceId={activeDeviceId}
-                    videoReadyCallback={() => {
-                        console.log("Video feed ready.");
-                    }}
-                />
+                <div>
+                    <Camera
+                        ref={camera}
+                        numberOfCamerasCallback={setNumberOfCameras}
+                        aspectRatio={4 / 3}
+                        videoSourceDeviceId={activeDeviceId}
+                        videoReadyCallback={() => {
+                            console.log("Video feed ready.");
+                        }}
+                    />
+                    <canvas id="mycanvas" />
+                </div>
                 <button
                     hidden={numberOfCameras <= 1}
                     onClick={() => {
@@ -117,9 +123,6 @@ function App() {
                 {/* <button onClick={() => setImage(camera.current.takePhoto())}>Take photo</button> */}
                 {/* <img src={image} alt="Taken photo" /> */}
                 <button onClick={geta}>Render Canvas</button>
-            </div>
-            <div>
-                <canvas id="mycanvas" />
             </div>
         </>
     );
