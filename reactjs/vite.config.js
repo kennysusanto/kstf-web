@@ -6,7 +6,8 @@ import mkcert from "vite-plugin-mkcert";
 export default defineConfig({
     server: {
         // host: "assemble-sitecore.com",
-        https: true,
+        https: false,
+        allowedHosts: ["ksdedicated.work"],
     },
     plugins: [react(), mkcert()],
 });
