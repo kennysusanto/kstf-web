@@ -1,0 +1,38 @@
+.d-none {
+    display: none;
+}
+
+#myimg2 {
+    position: fixed;
+}
+
+#myimg2 {
+    left: 50px;
+    bottom: 50px;
+}
+
+#mycam, #mycam video {
+    width: 30vw;
+    height: calc(.75 * 30vw);
+}
+
+#facecontainer {
+    width: 30vw;
+}
+
+@media (width < 768px) {
+    #myimg2 {
+        left: 10px;
+        top: 10px;
+    }
+
+    #mycam, #mycam video {
+        width: 80vw;
+        height: calc((4/3) * 80vw);
+    }
+    
+    #facecontainer {
+        width: 80vw;
+    }
+}
+

@@ -9,6 +9,7 @@ import "@tensorflow/tfjs-core";
 import "@tensorflow/tfjs-backend-webgl";
 import * as faceDetection from "@tensorflow-models/face-detection";
 import * as tf from "@tensorflow/tfjs";
+import { ToastContainer, toast, Slide } from "react-toastify";
 
 let nextId = 0;
 
@@ -22,6 +23,7 @@ function App() {
     let canvasctx = useRef(null);
     const [devices, setDevices] = useState([]);
     const [activeDeviceId, setActiveDeviceId] = useState(undefined);
+    const [capturing, setCapturing] = useState(false);
 
     const detectorModel = faceDetection.SupportedModels.MediaPipeFaceDetector;
     const detectorConfig = {
@@ -29,43 +31,68 @@ function App() {
         solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/face_detection",
         // or 'base/node_modules/@mediapipe/face_detection' in npm.
     };
-    let detector = useRef(null);
 
-    const geta = async () => {
-        console.log(camera);
-        canvas = document.getElementById("mycanvas");
-        // canvas = video.nextElementSibling;
-        // canvas.style.display = "block";
-        canvasctx = canvas.getContext("2d");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        //drawVideo();
-        // video.style.visibility = "hidden";
+    const [detector, setDetector] = useState(null);
+    var capturingRef = useRef(capturing);
 
-        detector = await faceDetection.createDetector(detectorModel, detectorConfig);
-        drawVideo();
+    const [browserWidth, setBrowserWidth] = useState(window.innerWidth);
+
+    function handleWindowSizeChange() {
+        setBrowserWidth(window.innerWidth);
+    }
+    useEffect(() => {
+        window.addEventListener("resize", handleWindowSizeChange);
+        return () => {
+            window.removeEventListener("resize", handleWindowSizeChange);
+        };
+    }, []);
+
+    const isMobile = browserWidth <= 768;
+
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            window.scrollTo({
+                top: document.documentElement.scrollHeight, // Scrolls to the maximum scrollable height
+                behavior: "smooth", // Provides a smooth scrolling animation
+            });
+        }, 200);
     };
 
-    const drawVideo = async () => {
-        canvasctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const estimationConfig = { flipHorizontal: false };
-        const faces = await detector.estimateFaces(canvas, estimationConfig);
-        canvasctx.strokeStyle = "red";
-        canvasctx.lineWidth = 5;
-        for (let face of faces) {
-            let r = face.box;
-            canvasctx.beginPath(); // Start a new path
-            canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
-            canvasctx.stroke();
+    // const geta = async () => {
+    //     console.log(camera);
+    //     canvas = document.getElementById("mycanvas");
+    //     // canvas = video.nextElementSibling;
+    //     // canvas.style.display = "block";
+    //     canvasctx = canvas.getContext("2d");
+    //     canvas.width = video.videoWidth;
+    //     canvas.height = video.videoHeight;
+    //     //drawVideo();
+    //     // video.style.visibility = "hidden";
 
-            for (let kp of face.keypoints) {
-                canvasctx.beginPath();
-                canvasctx.ellipse(kp.x, kp.y, 1, 1, 0, 0, 2 * Math.PI);
-                canvasctx.stroke();
-            }
-        }
-        requestAnimationFrame(drawVideo);
-    };
+    //     setDetector(await faceDetection.createDetector(detectorModel, detectorConfig));
+    //     drawVideo();
+    // };
+
+    // const drawVideo = async () => {
+    //     canvasctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    //     const estimationConfig = { flipHorizontal: false };
+    //     const faces = await detector.estimateFaces(canvas, estimationConfig);
+    //     canvasctx.strokeStyle = "red";
+    //     canvasctx.lineWidth = 5;
+    //     for (let face of faces) {
+    //         let r = face.box;
+    //         canvasctx.beginPath(); // Start a new path
+    //         canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
+    //         canvasctx.stroke();
+
+    //         for (let kp of face.keypoints) {
+    //             canvasctx.beginPath();
+    //             canvasctx.ellipse(kp.x, kp.y, 1, 1, 0, 0, 2 * Math.PI);
+    //             canvasctx.stroke();
+    //         }
+    //     }
+    //     requestAnimationFrame(drawVideo);
+    // };
 
     useEffect(() => {
         (async () => {
@@ -84,6 +111,51 @@ function App() {
             // }
         })();
     });
+
+    useEffect(() => {
+        (async () => {
+            console.log("Detector is initializing");
+            let d = await faceDetection.createDetector(detectorModel, detectorConfig);
+            setDetector(d);
+            console.log("Detector is initialized");
+        })();
+    }, []);
+
+    useEffect(() => {
+        if (!capturing) {
+            return;
+        }
+        detectFaceLoop();
+    }, [capturing]);
+
+    const detectFaceLoop = () => {
+        if (capturingRef.current) {
+            const estimationConfig = { flipHorizontal: false };
+            detector.estimateFaces(video, estimationConfig).then((faces) => {
+                if (faces.length > 0) {
+                    let r = faces[0].box;
+                    let canvas = document.getElementById("mycanvas2");
+                    let image = document.getElementById("myimg2");
+                    let ctx = canvas.getContext("2d");
+                    canvas.width = MOBILE_NET_INPUT_WIDTH;
+                    canvas.height = MOBILE_NET_INPUT_HEIGHT;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
+                    // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
+                    let data = canvas.toDataURL("image/png");
+                    image.setAttribute("src", data);
+                    // canvasctx.beginPath(); // Start a new path
+                    // canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
+                    // canvasctx.stroke();
+                }
+                // setImage(video);
+            });
+
+            requestAnimationFrame(detectFaceLoop);
+        } else {
+            clearPreview();
+        }
+    };
 
     // image classification
 
@@ -104,12 +176,15 @@ function App() {
     const [mobileNetBase, setMobileNetBase] = useState(undefined);
     const [trainingComplete, setTrainingComplete] = useState(false);
     const [predicting, setPredicting] = useState(false);
-    const [predictRes, setPredictRes] = useState("");
+    var predictingRef = useRef(predicting);
+    const [highestDataCount, setHighestDataCount] = useState(0);
+
+    const [predictRes, setPredictRes] = useState(null);
+    const [showPreview, setShowPreview] = useState(true);
 
     useEffect(() => {
         (async () => {
             await loadMobileNetFeatureModel();
-            console.log("KS THIS SHOULD ONLY RUN ONCE");
         })();
     }, []);
 
@@ -147,17 +222,85 @@ function App() {
         });
     };
 
-    const captureImage = (cc) => {
+    const calculateFaceFeatures = async (showToast = true) => {
+        const estimationConfig = { flipHorizontal: false };
+        const faces = await detector.estimateFaces(video, estimationConfig);
+
+        if (faces.length > 0) {
+            let r = faces[0].box;
+            let canvas = document.getElementById("mycanvas2");
+            let image = document.getElementById("myimg2");
+            let ctx = canvas.getContext("2d");
+            canvas.width = MOBILE_NET_INPUT_WIDTH;
+            canvas.height = MOBILE_NET_INPUT_HEIGHT;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
+            // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
+            let data = canvas.toDataURL("image/png");
+            image.setAttribute("src", data);
+
+            if (showPreview) {
+                image.style.display = "block";
+            } else {
+                image.style.display = "none";
+            }
+
+            return tf.tidy(function () {
+                let videoFrameAsTensor = tf.browser.fromPixels(canvas);
+                // Resize video frame tensor to be 224 x 224 pixels which is needed by MobileNet for input.
+                let resizedTensorFrame = tf.image.resizeBilinear(videoFrameAsTensor, [MOBILE_NET_INPUT_HEIGHT, MOBILE_NET_INPUT_WIDTH], true);
+
+                let normalizedTensorFrame = resizedTensorFrame.div(255);
+
+                return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
+            });
+        } else {
+            if (showToast) {
+                textToast("Face not detected!");
+            }
+
+            return null;
+        }
+    };
+
+    const textToast = (msg) => {
+        if (msg == "") {
+            return;
+        }
+        toast(msg, {
+            position: "bottom-right",
+            autoClose: 500,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Slide,
+        });
+    };
+
+    const captureImage = async (cc) => {
         // console.log("capture", cc);
-        let imageFeatures = calculateFeaturesOnCurrentFrame();
+        // let imageFeatures = calculateFeaturesOnCurrentFrame();
+        let imageFeatures = await calculateFaceFeatures();
         // console.log("KS imageFeatures", imageFeatures);
+
+        if (imageFeatures === null) {
+            return;
+        }
 
         trainingDataInputs.push(imageFeatures);
         trainingDataOutputs.push(cc.id);
+        let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
+        if (dataCount > highestDataCount) {
+            setHighestDataCount(dataCount);
+        }
     };
 
     const trainAndPredict = async () => {
         console.log("TRAINING");
+        clearPreview();
         let model = tf.sequential();
         model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
         model.add(tf.layers.dense({ units: classes.length, activation: "softmax" }));
@@ -213,6 +356,8 @@ function App() {
 
         // predictLoop();
         setTrainingComplete(true);
+        textToast("Training complete!");
+        scrollToBottom();
     };
 
     const logProgress = (epoch, logs) => {
@@ -224,30 +369,49 @@ function App() {
             return;
         }
 
-        predictProcess();
+        (async () => {
+            await predictLoop();
+        })();
     }, [predicting]);
 
-    const predictProcess = () => {
-        if (predicting) {
-            tf.tidy(function () {
-                let imageFeatures = calculateFeaturesOnCurrentFrame();
-                let prediction = model.predict(imageFeatures.expandDims()).squeeze();
-                let highestIndex = prediction.argMax().arraySync();
-                let predictionArray = prediction.arraySync();
-                setPredictRes(
-                    "Prediction: " + classes[highestIndex].name + " with " + Math.floor(predictionArray[highestIndex] * 100) + "% confidence"
-                );
-            });
-
-            requestAnimationFrame(predictProcess);
+    const predictLoop = async () => {
+        if (predictingRef.current) {
+            let imageFeatures = await calculateFaceFeatures(false);
+            if (imageFeatures != null) {
+                tf.tidy(function () {
+                    let startDate = new Date();
+                    // let imageFeatures = calculateFeaturesOnCurrentFrame();
+                    let prediction = model.predict(imageFeatures.expandDims()).squeeze();
+                    let highestIndex = prediction.argMax().arraySync();
+                    let predictionArray = prediction.arraySync();
+                    // Do your operations
+                    let endDate = new Date();
+                    let ms = endDate.getTime() - startDate.getTime();
+                    setPredictRes({
+                        name: classes[highestIndex].name,
+                        confidence: Math.floor(predictionArray[highestIndex] * 100),
+                        spent: ms,
+                    });
+                });
+            } else {
+                setPredictRes(null);
+            }
+            requestAnimationFrame(predictLoop);
+        } else {
+            clearPreview();
         }
+    };
+
+    const clearPreview = () => {
+        let image = document.getElementById("myimg2");
+        image.setAttribute("src", "");
     };
 
     return (
         <>
-            <h1>Face Detector</h1>
             <a href="/">Back</a>
-            <div>
+            <div id="facecontainer">
+                <p>{isMobile ? "Mobile" : "PC"}</p>
                 <select
                     onChange={(event) => {
                         setActiveDeviceId(event.target.value);
@@ -259,18 +423,21 @@ function App() {
                         </option>
                     ))}
                 </select>
-                <text>{activeDeviceId}</text>
-                <div>
+                {/* <text>{activeDeviceId}</text> */}
+                <div id="mycam">
                     <Camera
                         ref={camera}
                         numberOfCamerasCallback={setNumberOfCameras}
-                        aspectRatio={4 / 3}
+                        aspectRatio={isMobile ? 3 / 4 : 4 / 3}
                         videoSourceDeviceId={activeDeviceId}
-                        videoReadyCallback={() => {
+                        videoReadyCallback={async () => {
                             console.log("Video feed ready.");
+                            // await detectFaceLoop();
                         }}
                     />
-                    <canvas id="mycanvas" />
+                    <canvas id="mycanvas" className="d-none" />
+                    <canvas id="mycanvas2" className="d-none" />
+                    <img id="myimg2" />
                 </div>
                 <button
                     hidden={numberOfCameras <= 1}
@@ -282,7 +449,16 @@ function App() {
                 </button>
                 {/* <button onClick={() => setImage(camera.current.takePhoto())}>Take photo</button> */}
                 {/* <img src={image} alt="Taken photo" /> */}
-                <button onClick={geta}>Render Canvas</button>
+                {/* <button onClick={geta}>Render Canvas</button> */}
+                <button
+                    hidden={numberOfCameras <= 1}
+                    onClick={() => {
+                        setCapturing(!capturing);
+                        capturingRef.current = !capturing;
+                    }}
+                >
+                    {capturing ? "Stop" : "Detect Face"}
+                </button>
             </div>
             <div>
                 <h3>Capture Buttons</h3>
@@ -290,8 +466,8 @@ function App() {
                     {classes.map((c) => (
                         <button
                             key={c.id}
-                            onMouseDown={() => {
-                                captureImage(c);
+                            onMouseDown={async () => {
+                                await captureImage(c);
                             }}
                         >
                             {c.name} ({trainingDataOutputs.filter((m) => m == c.id).length})
@@ -299,6 +475,12 @@ function App() {
                     ))}
                 </div>
                 <button
+                    disabled={
+                        highestDataCount == 0 ||
+                        classes.length == 0 ||
+                        !classes.every((m) => trainingDataOutputs.filter((k) => k == m.id).length == highestDataCount)
+                    }
+                    title="Data count needs to be the same across all class"
                     onClick={async () => {
                         await trainAndPredict();
                     }}
@@ -312,12 +494,14 @@ function App() {
                 <input value={className} onChange={(e) => setClassName(e.target.value)} />
                 <button
                     onClick={() => {
-                        classes.push({
-                            id: nextId++,
-                            name: className,
-                        });
-                        localStorage.setItem("classes", JSON.stringify(classes));
-                        setClassName("");
+                        if (className != "") {
+                            classes.push({
+                                id: nextId++,
+                                name: className,
+                            });
+                            localStorage.setItem("classes", JSON.stringify(classes));
+                            setClassName("");
+                        }
                     }}
                 >
                     Add
@@ -333,16 +517,33 @@ function App() {
             <div>
                 <h3>Prediction</h3>
                 {trainingComplete ? (
-                    <button
-                        onClick={() => {
-                            setPredicting(!predicting);
-                        }}
-                    >
-                        {predicting ? "Stop" : "Predict"}
-                    </button>
+                    <div>
+                        <button
+                            onClick={() => {
+                                setPredicting(!predicting);
+                                predictingRef.current = !predicting;
+                            }}
+                        >
+                            {predicting ? "Stop" : "Predict"}
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowPreview(!showPreview);
+                            }}
+                        >
+                            {showPreview ? "Hide Preview" : "Show Preview"}
+                        </button>
+                    </div>
                 ) : null}
-                {predicting ? <p>{predictRes}</p> : null}
+                {predicting && predictRes ? (
+                    <p>
+                        Prediction: <b>{predictRes.name}</b> with {predictRes.confidence}% confidence in {predictRes.spent}ms
+                    </p>
+                ) : (
+                    <p>Start {trainingComplete ? "training" : "predicting"}</p>
+                )}
             </div>
+            <ToastContainer limit={5} />
         </>
     );
 }
