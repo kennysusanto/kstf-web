@@ -238,6 +238,7 @@ function App() {
             // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
             let data = canvas.toDataURL("image/png");
             image.setAttribute("src", data);
+            image.style.visibility = "visible";
 
             if (showPreview) {
                 image.style.display = "block";
@@ -299,8 +300,6 @@ function App() {
     };
 
     const trainAndPredict = async () => {
-        console.log("TRAINING");
-        clearPreview();
         let model = tf.sequential();
         model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
         model.add(tf.layers.dense({ units: classes.length, activation: "softmax" }));
@@ -405,6 +404,7 @@ function App() {
     const clearPreview = () => {
         let image = document.getElementById("myimg2");
         image.setAttribute("src", "");
+        image.style.visibility = "hidden";
     };
 
     return (
@@ -460,36 +460,9 @@ function App() {
                     {capturing ? "Stop" : "Detect Face"}
                 </button>
             </div>
+
             <div>
-                <h3>Capture Buttons</h3>
-                <div>
-                    {classes.map((c) => (
-                        <button
-                            key={c.id}
-                            onMouseDown={async () => {
-                                await captureImage(c);
-                            }}
-                        >
-                            {c.name} ({trainingDataOutputs.filter((m) => m == c.id).length})
-                        </button>
-                    ))}
-                </div>
-                <button
-                    disabled={
-                        highestDataCount == 0 ||
-                        classes.length == 0 ||
-                        !classes.every((m) => trainingDataOutputs.filter((k) => k == m.id).length == highestDataCount)
-                    }
-                    title="Data count needs to be the same across all class"
-                    onClick={async () => {
-                        await trainAndPredict();
-                    }}
-                >
-                    Train
-                </button>
-                <p>Training data {trainingDataInputs.length}</p>
-            </div>
-            <div>
+                <h3>Training</h3>
                 <label>Class Name</label>
                 <input value={className} onChange={(e) => setClassName(e.target.value)} />
                 <button
@@ -509,10 +482,34 @@ function App() {
                 <ul>
                     {classes.map((c) => (
                         <li key={c.id} id={c.id}>
-                            {c.name}
+                            <button
+                                onMouseDown={async () => {
+                                    await captureImage(c);
+                                }}
+                            >
+                                {c.name} ({trainingDataOutputs.filter((m) => m == c.id).length})
+                            </button>
                         </li>
                     ))}
                 </ul>
+                <button
+                    disabled={
+                        highestDataCount == 0 ||
+                        classes.length == 0 ||
+                        !classes.every((m) => trainingDataOutputs.filter((k) => k == m.id).length == highestDataCount)
+                    }
+                    title="Data count needs to be the same across all class"
+                    onClick={() => {
+                        console.log("TRAINING");
+                        textToast("Training started");
+                        clearPreview();
+                        setTimeout(async () => {
+                            await trainAndPredict();
+                        }, 500);
+                    }}
+                >
+                    Train on {trainingDataInputs.length} data
+                </button>
             </div>
             <div>
                 <h3>Prediction</h3>
@@ -540,7 +537,7 @@ function App() {
                         Prediction: <b>{predictRes.name}</b> with {predictRes.confidence}% confidence in {predictRes.spent}ms
                     </p>
                 ) : (
-                    <p>Start {trainingComplete ? "training" : "predicting"}</p>
+                    <p>Start {trainingComplete ? "predicting" : "training"}</p>
                 )}
             </div>
             <ToastContainer limit={5} />
