@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "./App.css";
+// import "./App.css";
 import "./Face.css";
 import { Camera } from "react-camera-pro";
 

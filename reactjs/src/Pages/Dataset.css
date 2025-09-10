@@ -1,0 +1,28 @@
+
+/* .container-dataset .img1 {
+    position: fixed;
+} */
+
+/* .container-dataset .img1 {
+    left: 50px;
+    bottom: 50px;
+} */
+
+/* .container-dataset .container-camera, .container-dataset .container-camera video {
+    width: 30vw;
+    height: calc(.75 * 30vw);
+} */
+
+@media (width < 768px) {
+    .container-dataset .img1 {
+        left: 10px;
+        top: 10px;
+    }
+
+    .container-dataset .container-camera, .container-dataset .container-camera video {
+        width: 80vw;
+        height: calc((4/3) * 80vw);
+    }
+    
+}
+

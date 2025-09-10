@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "./App.css";
+// import "./App.css";
 import "./Face.css";
 import { Camera } from "react-camera-pro";
 
@@ -144,6 +144,7 @@ function App() {
                     // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
                     let data = canvas.toDataURL("image/png");
                     image.setAttribute("src", data);
+                    image.style.visibility = "visible";
                     // canvasctx.beginPath(); // Start a new path
                     // canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
                     // canvasctx.stroke();
