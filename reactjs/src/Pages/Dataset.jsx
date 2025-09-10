@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./Dataset.css";
 import { Camera } from "react-camera-pro";
-
 import "@mediapipe/face_detection";
 import "@tensorflow/tfjs-core";
 // Register WebGL backend.
@@ -17,6 +16,9 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+
+import axios from "axios";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 let nextId = 0;
 
@@ -204,7 +206,7 @@ function App() {
         let canvas = document.querySelector(".container-dataset .canvas2");
         let data = canvas.toDataURL("image/png");
         setImage(data);
-        images.push(data);
+        images.push({ id: cc.id, name: cc.name, data });
         // trainingDataInputs.push(imageFeatures);
         // trainingDataOutputs.push(cc.id);
         classesTensors.push(imageTensor);
@@ -228,7 +230,50 @@ function App() {
         document.querySelector(".classname-input").focus();
     };
 
-    const saveToServer = () => {};
+    const {
+        status,
+        data: dataset,
+        error,
+    } = useQuery({
+        queryKey: ["dataset"],
+        queryFn: async () => {
+            const data = await axios.get("http://localhost:5172/api/dataset");
+            let classGroups = [];
+            for (const file of data.data) {
+                let name = file.name.substr(0, file.name.indexOf("_"));
+                let group = null;
+                for (const c of classGroups) {
+                    if (c.name === name) {
+                        group = c;
+                        break;
+                    }
+                }
+                if (!group) {
+                    group = {
+                        name,
+                        count: 1,
+                    };
+                    classGroups.push(group);
+                } else {
+                    group.count++;
+                }
+            }
+            return classGroups;
+        },
+    });
+
+    const mutation = useMutation({
+        mutationFn: (newData) => {
+            return axios.post("http://localhost:5172/api/dataset", newData);
+        },
+    });
+
+    const saveToServer = () => {
+        mutation.mutate({
+            images,
+            classes,
+        });
+    };
 
     return (
         <Container className="container-dataset">
@@ -327,7 +372,28 @@ function App() {
                         ))}
                     </div>
                     <div>
-                        <Button onClick={saveToServer}>Save</Button>
+                        {mutation.isPending ? (
+                            "Saving..."
+                        ) : (
+                            <>
+                                {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
+                                {mutation.isSuccess ? <span>Save success!</span> : null}
+                                <Button onClick={saveToServer}>Save</Button>
+                            </>
+                        )}
+                    </div>
+                    <div>
+                        <h4>Data from server</h4>
+                        {status === "pending" ? <span>Loading...</span> : null}
+                        {status === "success" ? (
+                            <div className="d-grid gap-2 mt-2">
+                                {dataset.map((d) => (
+                                    <Button size="lg">
+                                        {d.name} ({d.count})
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : null}
                     </div>
                 </Col>
             </Row>
