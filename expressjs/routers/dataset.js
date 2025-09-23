@@ -1,6 +1,6 @@
 import express from "express";
 import fs from "fs";
-import path from "path";
+import { uuidv4, readFilesSync, readFileBytes } from "../helpers/misc.js";
 
 const router = express.Router();
 
@@ -14,11 +14,18 @@ const router = express.Router();
 // define the home page route
 router.get("/", (req, res) => {
     let files = readFilesSync("./public/dataset");
-    res.send(files);
+    res.json({ data: files });
 });
 // define the about route
 router.get("/about", (req, res) => {
-    res.send("About dataset");
+    res.json({ message: "About dataset" });
+});
+
+router.get("/:class/:filename", (req, res) => {
+    let bytes = readFileBytes(`./public/dataset/${req.params.class}/${req.params.filename}`);
+    res.json({
+        data: bytes,
+    });
 });
 
 router.post("/", (req, res) => {
@@ -39,37 +46,7 @@ router.post("/", (req, res) => {
 
         fs.writeFileSync(`${dir}/${name}_${uuid}.png`, buff);
     }
-    res.send(dd);
+    res.json({ data: dd });
 });
-
-function uuidv4() {
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
-        (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16)
-    );
-}
-
-function readFilesSync(dir) {
-    const files = [];
-
-    fs.readdirSync(dir).forEach((foldername) => {
-        fs.readdirSync(path.resolve(dir, foldername)).forEach((filename) => {
-            const name = path.parse(filename).name;
-            const ext = path.parse(filename).ext;
-            const filepath = path.resolve(path.resolve(dir, foldername), filename);
-            const stat = fs.statSync(filepath);
-            const isFile = stat.isFile();
-
-            if (isFile) files.push({ filepath, name, ext, stat });
-        });
-    });
-
-    files.sort((a, b) => {
-        // natural sort alphanumeric strings
-        // https://stackoverflow.com/a/38641281
-        return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
-    });
-
-    return files;
-}
 
 export default router;

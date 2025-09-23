@@ -8,6 +8,8 @@ import Splash from "./Splash.jsx";
 // import Menu from "./Menu.jsx";
 import Face from "./Face.jsx";
 import DatasetPage from "./Pages/Dataset.jsx";
+import TrainPage from "./Pages/Train.jsx";
+import PredictPage from "./Pages/Predict.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -37,11 +39,11 @@ const router = createBrowserRouter([
     },
     {
         path: "/Train",
-        element: <Face />,
+        element: <TrainPage />,
     },
     {
         path: "/Predict",
-        element: <Face />,
+        element: <PredictPage />,
     },
 ]);
 

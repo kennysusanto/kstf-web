@@ -377,6 +377,7 @@ function App() {
     const predictLoop = async () => {
         if (predictingRef.current) {
             let imageFeatures = await calculateFaceFeatures(false);
+            console.log(imageFeatures);
             if (imageFeatures != null) {
                 tf.tidy(function () {
                     let startDate = new Date();

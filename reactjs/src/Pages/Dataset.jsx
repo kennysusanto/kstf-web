@@ -23,7 +23,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 let nextId = 0;
 
 function App() {
-    // face detection
     const camera = useRef(null);
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
@@ -52,6 +51,8 @@ function App() {
     const [classesTensorLabels, setClassesTensorLabels] = useState([]);
     const [highestDataCount, setHighestDataCount] = useState(0);
 
+    const isMobile = browserWidth <= 768;
+
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
     }
@@ -61,8 +62,6 @@ function App() {
             window.removeEventListener("resize", handleWindowSizeChange);
         };
     }, []);
-
-    const isMobile = browserWidth <= 768;
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -239,7 +238,7 @@ function App() {
         queryFn: async () => {
             const data = await axios.get("http://localhost:5172/api/dataset");
             let classGroups = [];
-            for (const file of data.data) {
+            for (const file of data.data.data) {
                 let name = file.name.substr(0, file.name.indexOf("_"));
                 let group = null;
                 for (const c of classGroups) {
@@ -250,6 +249,7 @@ function App() {
                 }
                 if (!group) {
                     group = {
+                        id: nextId++,
                         name,
                         count: 1,
                     };
@@ -388,7 +388,7 @@ function App() {
                         {status === "success" ? (
                             <div className="d-grid gap-2 mt-2">
                                 {dataset.map((d) => (
-                                    <Button size="lg">
+                                    <Button key={d.id} size="lg">
                                         {d.name} ({d.count})
                                     </Button>
                                 ))}
