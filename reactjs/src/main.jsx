@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -11,6 +11,10 @@ import DatasetPage from "./Pages/Dataset.jsx";
 import TrainPage from "./Pages/Train.jsx";
 import PredictPage from "./Pages/Predict.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { AuthProvider, AuthContext } from "./AuthContext.jsx";
+import LoginPage from "./Pages/Login.jsx";
+
+import Button from "react-bootstrap/Button";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -47,10 +51,25 @@ const router = createBrowserRouter([
     },
 ]);
 
+const Main = () => {
+    const { isLoggedIn, user, login, logout } = useContext(AuthContext);
+    return (
+        <>
+            {isLoggedIn ? (
+                <QueryClientProvider client={queryClient}>
+                    <RouterProvider router={router} />
+                </QueryClientProvider>
+            ) : (
+                <LoginPage />
+            )}
+        </>
+    );
+};
+
 createRoot(document.getElementById("root")).render(
     // <StrictMode>
-    <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-    </QueryClientProvider>
+    <AuthProvider>
+        <Main />
+    </AuthProvider>
     // </StrictMode>
 );

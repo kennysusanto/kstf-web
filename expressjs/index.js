@@ -5,6 +5,7 @@ import cors from "cors";
 import birdsRouter from "./routers/birds.js";
 import datasetRouter from "./routers/dataset.js";
 import trainRouter from "./routers/train.js";
+import authRouter from "./routers/auth.js";
 import moment from "moment";
 import path from "path";
 
@@ -35,6 +36,7 @@ app.get("/api", (req, res) => {
 app.use("/api/birds", birdsRouter);
 app.use("/api/dataset", datasetRouter);
 app.use("/api/train", trainRouter);
+app.use("/api/auth", authRouter);
 
 app.use(errorHandler);
 
