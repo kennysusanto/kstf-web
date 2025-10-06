@@ -128,12 +128,14 @@ router.post("/", upload.any(), (req, res) => {
     let uuid = uuidv4();
     // let dir = `./public/model/${model.name}_${uuid}`;
 
-    fs.mkdirSync(dirname, { recursive: true });
+    let createdfolder = fs.mkdirSync(dirname, { recursive: true });
+    console.log("createdfolder", createdfolder);
 
     // console.log(model);
     let filesToReturn = [];
     for (const file of req.files) {
         let fn = file.filename;
+        console.log("trace", "dirname", dirname, "fn", fn);
         let p = path.resolve(dirname, fn);
         console.log("trace", p, "dirname", dirname, "fn", fn);
 

@@ -27,7 +27,6 @@ router.get("/", (req, res) => {
     };
     for (const file of files) {
         let s = file.filepath.split("/");
-        console.log(s, file.filepath);
         let id = s[s.length - 2];
         let ss = id.split("_");
         id = ss[0];
