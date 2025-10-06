@@ -31,55 +31,59 @@ const dirname = "./src/public/model";
 
 // define the home page route
 router.get("/", (req, res, next) => {
-    let files = readFilesSync(dirname);
     let toReturn = [];
-    const findGroup = (uid) => {
-        let found = null;
-        for (const g of toReturn) {
-            if (g.uid === uid) {
-                found = g;
-                break;
+    try {
+        let files = readFilesSync(dirname);
+        const findGroup = (uid) => {
+            let found = null;
+            for (const g of toReturn) {
+                if (g.uid === uid) {
+                    found = g;
+                    break;
+                }
+            }
+            return found;
+        };
+        for (const file of files) {
+            let s = file.filepath.split("/");
+            let uid = s[s.length - 2];
+            let g = findGroup(uid);
+            if (!g) {
+                let newGroup = {
+                    uid,
+                };
+                if (file.ext === ".json") {
+                    newGroup.model = {
+                        uid,
+                        name: file.name,
+                        ext: file.ext,
+                    };
+                } else if (file.ext === ".bin") {
+                    newGroup.weights = {
+                        uid,
+                        name: file.name,
+                        ext: file.ext,
+                    };
+                }
+                toReturn.push(newGroup);
+            } else {
+                if (file.ext === ".json") {
+                    g.model = {
+                        uid,
+                        name: file.name,
+                        ext: file.ext,
+                    };
+                } else if (file.ext === ".bin") {
+                    g.weights = {
+                        uid,
+                        name: file.name,
+                        ext: file.ext,
+                    };
+                }
             }
         }
-        return found;
-    };
-    for (const file of files) {
-        let s = file.filepath.split("/");
-        let uid = s[s.length - 2];
-        let g = findGroup(uid);
-        if (!g) {
-            let newGroup = {
-                uid,
-            };
-            if (file.ext === ".json") {
-                newGroup.model = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            } else if (file.ext === ".bin") {
-                newGroup.weights = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            }
-            toReturn.push(newGroup);
-        } else {
-            if (file.ext === ".json") {
-                g.model = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            } else if (file.ext === ".bin") {
-                g.weights = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            }
-        }
+    } catch (err) {
+        console.error(err);
     }
     res.json({ data: toReturn });
 });
@@ -128,9 +132,7 @@ router.post("/", upload.any(), (req, res) => {
     let uuid = uuidv4();
     // let dir = `./public/model/${model.name}_${uuid}`;
 
-    if (!fs.existsSync(dirname)) {
-        fs.mkdirSync(dirname);
-    }
+    fs.mkdirSync(dirname, { recursive: true });
 
     // console.log(model);
     let filesToReturn = [];
