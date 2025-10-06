@@ -5,6 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "nodemon src/index.js localhost",
+        "dev2": "node src/index.js",
         "dev-win": "nodemon --env-file=.env src/index.js localhost",
         "format": "prettier -l --write \"**/*.js\"",
         "format-check": "prettier --check \"**/*.js\"",

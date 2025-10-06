@@ -57,7 +57,7 @@ COPY expressjs/spec ./spec
 COPY expressjs/src ./src
 RUN mkdir ./src/public/model
 RUN mkdir ./src/public/dataset
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev2"]
 
 ###################################################
 # Stage: test
