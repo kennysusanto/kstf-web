@@ -128,6 +128,10 @@ router.post("/", upload.any(), (req, res) => {
     let uuid = uuidv4();
     // let dir = `./public/model/${model.name}_${uuid}`;
 
+    if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname);
+    }
+
     // console.log(model);
     let filesToReturn = [];
     for (const file of req.files) {
