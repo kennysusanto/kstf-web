@@ -40,7 +40,7 @@ services:
         image: traefik:v3.4
         command: --providers.docker
         ports:
-            - 8081:80
+            - 81:80
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
 
@@ -84,7 +84,7 @@ services:
                 - path: ./expressjs/package.json
                   action: rebuild
         labels:
-            traefik.http.routers.backend.rule: Host(`localhost`) && PathPrefix(`/api`)
+            traefik.http.routers.backend.rule: Host(`kstf.ksdedicated.work`) && PathPrefix(`/api`)
             traefik.http.services.backend.loadbalancer.server.port: 5172
 
     ###################################################
@@ -114,7 +114,7 @@ services:
                 - path: ./reactjs/package.json
                   action: rebuild
         labels:
-            traefik.http.routers.client.rule: Host(`localhost`)
+            traefik.http.routers.client.rule: Host(`kstf.ksdedicated.work`)
             traefik.http.services.client.loadbalancer.server.port: 5173
 
     ###################################################
@@ -141,7 +141,7 @@ services:
             MYSQL_ROOT_PASSWORD: root
             MYSQL_DATABASE: kstf-web
         healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            test: ["CMD", "mysqladmin", "ping", "-h", "kstf.ksdedicated.work"]
             interval: 5s
             timeout: 5s
             retries: 5
@@ -168,8 +168,8 @@ services:
             PMA_USER: root
             PMA_PASSWORD: root
         labels:
-            traefik.http.routers.phpmyadmin.rule: Host(`db.localhost`)
-            traefik.http.services.phpmyadmin.loadbalancer.server.port: 8082
+            traefik.http.routers.phpmyadmin.rule: Host(`kstfdb.ksdedicated.work`)
+            traefik.http.services.phpmyadmin.loadbalancer.server.port: 80
 
 ###################################################
 # Volumes
