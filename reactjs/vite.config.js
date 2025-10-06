@@ -13,7 +13,7 @@ export default defineConfig({
         //     cert: fs.readFileSync("./cloudflare-origin-cert.pem"),
         // },
         https: false,
-        allowedHosts: ["ksdedicated.work"],
+        allowedHosts: ["ksdedicated.work", "kstf.ksdedicated.work"],
     },
     plugins: [react(), mkcert()],
 });
