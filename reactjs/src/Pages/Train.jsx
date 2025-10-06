@@ -216,7 +216,7 @@ function App() {
         combinedModel.summary();
         console.log("TRAINING COMPLETE");
         // await combinedModel.save("downloads://my-model");
-        let domain = window.location.protocol + window.location.hostname;
+        let domain = window.location.protocol + "//" + window.location.hostname;
         let resp = await model.save(`${domain}/api/train`);
 
         let newName = modelName;
