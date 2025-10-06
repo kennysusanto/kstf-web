@@ -50,6 +50,7 @@ function App() {
     const [classesTensors, setClassesTensors] = useState([]);
     const [classesTensorLabels, setClassesTensorLabels] = useState([]);
     const [highestDataCount, setHighestDataCount] = useState(0);
+    const [dataChanged, setDataChanged] = useState(false);
 
     const isMobile = browserWidth <= 768;
 
@@ -210,18 +211,46 @@ function App() {
         // trainingDataOutputs.push(cc.id);
         classesTensors.push(imageTensor);
         classesTensorLabels.push(cc.id);
+        classes.find((m) => m.id == cc.id).count++;
         // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
         let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
         if (dataCount > highestDataCount) {
             setHighestDataCount(dataCount);
         }
+        setDataChanged(true);
+    };
+
+    const uuidv4 = () => {
+        return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+            (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16)
+        );
+    };
+
+    const generateId = () => {
+        let newId = uuidv4();
+        if (classes != undefined && classes.length > 0) {
+            let conflict = classes.some((m) => m.id === newId);
+            while (conflict) {
+                newId = uuidv4();
+                conflict = classes.some((m) => m.id === newId);
+            }
+        }
+        if (dataset != undefined && dataset.length > 0) {
+            let conflict = dataset.some((m) => m.id == newId);
+            while (conflict) {
+                newId = uuidv4();
+                conflict = dataset.some((m) => m.id === newId);
+            }
+        }
+        return newId;
     };
 
     const inputClass = () => {
         if (className != "") {
             classes.push({
-                id: nextId++,
+                id: generateId(),
                 name: className,
+                count: 0,
             });
             localStorage.setItem("classes", JSON.stringify(classes));
             setClassName("");
@@ -236,35 +265,28 @@ function App() {
     } = useQuery({
         queryKey: ["dataset"],
         queryFn: async () => {
-            const data = await axios.get("http://localhost:5172/api/dataset");
-            let classGroups = [];
-            for (const file of data.data.data) {
-                let name = file.name.substr(0, file.name.indexOf("_"));
-                let group = null;
-                for (const c of classGroups) {
-                    if (c.name === name) {
-                        group = c;
-                        break;
-                    }
+            const data = await axios.get(`/api/dataset`);
+            let classGroups = data.data.data;
+            classGroups = classGroups.map((m) => ({
+                ...m,
+                count: m.data.length,
+            }));
+
+            // sync to local array
+            for (const g of classGroups) {
+                if (classes.find((m) => m.id === g.id)) {
+                    continue;
                 }
-                if (!group) {
-                    group = {
-                        id: nextId++,
-                        name,
-                        count: 1,
-                    };
-                    classGroups.push(group);
-                } else {
-                    group.count++;
-                }
+                classes.push(g);
             }
+
             return classGroups;
         },
     });
 
     const mutation = useMutation({
         mutationFn: (newData) => {
-            return axios.post("http://localhost:5172/api/dataset", newData);
+            return axios.post(`/api/dataset`, newData);
         },
     });
 
@@ -273,14 +295,15 @@ function App() {
             images,
             classes,
         });
+        setDataChanged(false);
     };
 
     return (
         <Container className="container-dataset">
-            <Row>
-                <a href="/">
-                    <Button>Back</Button>
-                </a>
+            <Row className="mb-2">
+                <div>
+                    <Button href="/">Back</Button>
+                </div>
             </Row>
             <Row>
                 <Col md={6}>
@@ -356,7 +379,9 @@ function App() {
                                 }
                             }}
                         />
-                        <Button onClick={inputClass}>Add</Button>
+                        <Button onClick={inputClass} disabled={status !== "success"}>
+                            Add
+                        </Button>
                     </div>
                     <div className="d-grid gap-2 mt-2">
                         {classes.map((c) => (
@@ -367,28 +392,36 @@ function App() {
                                     await captureImage(c);
                                 }}
                             >
-                                {c.name} ({classesTensorLabels.filter((m) => m == c.id).length})
+                                {c.name} ({c.count})
                             </Button>
                         ))}
                     </div>
-                    <div>
+                    <div className="mt-2">
                         {mutation.isPending ? (
                             "Saving..."
                         ) : (
                             <>
-                                {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
-                                {mutation.isSuccess ? <span>Save success!</span> : null}
-                                <Button onClick={saveToServer}>Save</Button>
+                                <Row>
+                                    <Col md={12}>
+                                        <div className="d-grid">
+                                            <Button onClick={saveToServer} variant="success" disabled={!dataChanged}>
+                                                Save
+                                            </Button>
+                                        </div>
+                                        {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
+                                        {mutation.isSuccess ? <span>Save success!</span> : null}
+                                    </Col>
+                                </Row>
                             </>
                         )}
                     </div>
-                    <div>
+                    <div className="mt-2">
                         <h4>Data from server</h4>
                         {status === "pending" ? <span>Loading...</span> : null}
                         {status === "success" ? (
                             <div className="d-grid gap-2 mt-2">
                                 {dataset.map((d) => (
-                                    <Button key={d.id} size="lg">
+                                    <Button key={d.id} variant="outline-secondary" disabled>
                                         {d.name} ({d.count})
                                     </Button>
                                 ))}

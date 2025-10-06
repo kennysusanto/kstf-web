@@ -1,4 +1,4 @@
-import { StrictMode, useContext } from "react";
+import { StrictMode, useContext, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -13,8 +13,6 @@ import PredictPage from "./Pages/Predict.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthProvider, AuthContext } from "./AuthContext.jsx";
 import LoginPage from "./Pages/Login.jsx";
-
-import Button from "react-bootstrap/Button";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -53,6 +51,7 @@ const router = createBrowserRouter([
 
 const Main = () => {
     const { isLoggedIn, user, login, logout } = useContext(AuthContext);
+
     return (
         <>
             {isLoggedIn ? (

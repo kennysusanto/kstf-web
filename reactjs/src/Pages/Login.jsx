@@ -41,7 +41,7 @@ function App() {
         if (formDataObj.username == "" || formDataObj.password == "") {
             return;
         }
-        let ress = await axios.post("http://localhost:5172/api/auth/login", formDataObj);
+        let ress = await axios.post(`/api/auth/login`, formDataObj);
         if (ress.data) {
             console.log(ress.data);
             if (ress.data.user) {
@@ -56,29 +56,42 @@ function App() {
         <Container className="container-training">
             <Row>
                 <Col md={12}>
-                    <h3>Login</h3>
+                    <h3 className="text-center">Login</h3>
 
                     <Form noValidate validated={validated} onSubmit={handleSubmit}>
-                        <InputGroup className="mb-3">
-                            <InputGroup.Text id="input-username">Username</InputGroup.Text>
-                            <Form.Control name="username" placeholder="johndoe" aria-label="Username" aria-describedby="input-username" required />
-                            <Form.Control.Feedback type="invalid">Please enter an username.</Form.Control.Feedback>
-                        </InputGroup>
+                        <Form.Group>
+                            <Form.Label id="input-username">Username</Form.Label>
+                            <InputGroup className="mb-3">
+                                <Form.Control
+                                    name="username"
+                                    placeholder="johndoe"
+                                    aria-label="Username"
+                                    aria-describedby="input-username"
+                                    required
+                                />
+                                <Form.Control.Feedback type="invalid">Please enter an username.</Form.Control.Feedback>
+                            </InputGroup>
+                        </Form.Group>
 
-                        <InputGroup className="mb-3">
-                            <InputGroup.Text id="input-username">Password</InputGroup.Text>
-                            <Form.Control
-                                name="password"
-                                placeholder="1234"
-                                aria-label="Username"
-                                type="password"
-                                aria-describedby="input-username"
-                                required
-                            />
-                            <Form.Control.Feedback type="invalid">Please enter a password.</Form.Control.Feedback>
-                        </InputGroup>
-                        <Button type="submit">Login</Button>
-                        <p>{message}</p>
+                        <Form.Group>
+                            <Form.Label id="input-username">Password</Form.Label>
+                            <InputGroup className="mb-3">
+                                <Form.Control
+                                    name="password"
+                                    placeholder="1234"
+                                    aria-label="Username"
+                                    type="password"
+                                    aria-describedby="input-username"
+                                    required
+                                />
+                                <Form.Control.Feedback type="invalid">Please enter a password.</Form.Control.Feedback>
+                            </InputGroup>
+                        </Form.Group>
+
+                        <div className="d-grid mb-2">
+                            <Button type="submit">Login</Button>
+                        </div>
+                        <p className="text-center">{message}</p>
                     </Form>
                 </Col>
             </Row>

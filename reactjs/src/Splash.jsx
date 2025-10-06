@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 // import "./App.css";
+import ConfirmLogoutModal from "./Components/ConfirmLogoutModal";
+import { AuthContext } from "./AuthContext";
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -8,22 +10,26 @@ import Button from "react-bootstrap/Button";
 
 function App() {
     const [count, setCount] = useState(0);
+    const [show, setShow] = useState(false);
+    const { isLoggedIn, user, login, logout } = useContext(AuthContext);
 
     return (
         <>
-            <div className="d-grid gap-2 mt-2">
-                <a href="/Face">
-                    <Button size="lg">Face Learning Simple</Button>
-                </a>
-                <a href="/Dataset">
-                    <Button size="lg">Dataset</Button>
-                </a>
-                <a href="/Train">
-                    <Button size="lg">Train</Button>
-                </a>
-                <a href="/Predict">
-                    <Button size="lg">Predict</Button>
-                </a>
+            <div className="d-grid gap-3 mt-2">
+                <Button href="/Face">Quick Demo</Button>
+                <Button href="/Dataset">Dataset</Button>
+                <Button href="/Train">Train</Button>
+                <Button href="/Predict">Predict</Button>
+                <div>
+                    <ConfirmLogoutModal props={{ show, setShow, logout }} />
+                    {isLoggedIn ? (
+                        <div className="d-grid">
+                            <Button onClick={() => setShow(true)} variant="outline-danger">
+                                Logout
+                            </Button>
+                        </div>
+                    ) : null}
+                </div>
             </div>
             <ul>
                 {/* <li>

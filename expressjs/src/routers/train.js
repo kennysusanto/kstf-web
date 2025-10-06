@@ -6,7 +6,7 @@ import path from "path";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "./public/model/"); // Specify the destination folder
+        cb(null, "./src/public/model/"); // Specify the destination folder
     },
     filename: function (req, file, cb) {
         // You can customize the filename here
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 const router = express.Router();
-const dirname = "./public/model";
+const dirname = "./src/public/model";
 
 // middleware that is specific to this router
 // const timeLog = (req, res, next) => {
@@ -44,7 +44,7 @@ router.get("/", (req, res, next) => {
         return found;
     };
     for (const file of files) {
-        let s = file.filepath.split("\\");
+        let s = file.filepath.split("/");
         let uid = s[s.length - 2];
         let g = findGroup(uid);
         if (!g) {
@@ -88,12 +88,12 @@ router.get("/about", (req, res) => {
     res.json({ message: "About train" });
 });
 
-router.get("/:modelname", (req, res) => {
-    let bytes = readFileBytes(`${dirname}/${req.params.class}/${req.params.filename}`);
-    res.json({
-        data: bytes,
-    });
-});
+// router.get("/:modelname", (req, res) => {
+//     let bytes = readFileBytes(`${dirname}/${req.params.class}/${req.params.filename}`);
+//     res.json({
+//         data: bytes,
+//     });
+// });
 
 router.post("/", upload.any(), (req, res) => {
     // console.log(req.body);
@@ -158,6 +158,24 @@ router.post("/", upload.any(), (req, res) => {
             uuid,
             files: filesToReturn,
         },
+    });
+});
+
+router.post("/rename", (req, res) => {
+    let oldName = req.body.oldName;
+    let newName = req.body.newName;
+    let message = "success";
+
+    let p = path.resolve(dirname, oldName);
+    if (fs.existsSync(p)) {
+        let newPath = path.resolve(dirname, newName + "_" + oldName);
+        fs.renameSync(p, newPath);
+    } else {
+        message = "File not found!";
+    }
+
+    res.json({
+        message,
     });
 });
 

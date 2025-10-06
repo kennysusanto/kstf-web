@@ -4,8 +4,11 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "nodemon ./index.js localhost"
+        "dev": "nodemon src/index.js localhost",
+        "dev-win": "nodemon --env-file=.env src/index.js localhost",
+        "format": "prettier -l --write \"**/*.js\"",
+        "format-check": "prettier --check \"**/*.js\"",
+        "test": "jest"
     },
     "dependencies": {
         "body-parser": "^2.2.0",
@@ -14,6 +17,14 @@
         "method-override": "^3.0.0",
         "moment": "^2.30.1",
         "multer": "^2.0.2",
-        "nodemon": "^3.1.10"
+        "nodemon": "^3.1.10",
+        "mysql2": "^3.14.1",
+        "uuid": "^11.1.0",
+        "wait-port": "^1.1.0"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "nodemon": "^3.0.3",
+        "prettier": "^3.2.4"
     }
 }

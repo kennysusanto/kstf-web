@@ -55,6 +55,7 @@ function App() {
     let mobilenet = undefined;
     const [mobileNetBase, setMobileNetBase] = useState(undefined);
     const [predictRes, setPredictRes] = useState(undefined);
+    const [modelValue, setModelValue] = useState("");
     const [useModel, setUseModel] = useState(undefined);
 
     function handleWindowSizeChange() {
@@ -161,7 +162,7 @@ function App() {
                             let ms = endDate.getTime() - startDate.getTime();
                             // console.log(highestIndex, ms);
                             if (classes !== undefined) {
-                                console.log(classes[highestIndex].name, ms);
+                                // console.log(classes[highestIndex].name, ms);
                                 setPredictRes({
                                     name: classes[highestIndex].name,
                                     confidence: Math.floor(predictionArray[highestIndex] * 100),
@@ -255,40 +256,29 @@ function App() {
     } = useQuery({
         queryKey: ["models"],
         queryFn: async () => {
-            const data = await axios.get("http://localhost:5172/api/train");
+            const data = await axios.get(`/api/train`);
 
             return data.data.data;
         },
     });
 
-    // const mutation = useMutation({
-    //     mutationFn: (newData) => {
-    //         return axios.post("http://localhost:5172/api/dataset", newData);
-    //     },
-    // });
-
-    // const saveToServer = () => {
-    //     mutation.mutate({
-    //         images,
-    //         classes,
-    //     });
-    // };
-
     const alertClicked = () => {
         alert("You clicked the third ListGroupItem");
     };
-
-    const [modelValue, setModelValue] = useState("");
 
     useEffect(() => {
         if (modelValue === "") {
             return;
         }
-        console.log("Loading model value", `http://localhost:5172/model/${modelValue}/model.json`);
+        console.log("Loading model value", `/api/model/${modelValue}/model.json`);
         (async () => {
-            const model = await tf.loadLayersModel(`http://localhost:5172/model/${modelValue}/model.json`);
+            const model = await tf.loadLayersModel(`/api/model/${modelValue}/model.json`);
             model.summary();
             setUseModel(model);
+
+            setCapturing(!capturing);
+            capturingRef.current = !capturing;
+            scrollToBottom();
         })();
         // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.json
         // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.weights.bin
@@ -301,33 +291,9 @@ function App() {
     } = useQuery({
         queryKey: ["classes"],
         queryFn: async () => {
-            const data = await axios.get("http://localhost:5172/api/dataset");
-            let classGroups = [];
-            for (const file of data.data.data) {
-                let a = file.filepath.substr(0, file.filepath.lastIndexOf("\\"));
-                let b = a.substr(a.lastIndexOf("\\") + 1);
-                let classId = b.substr(0, b.indexOf("_"));
-                let name = file.name.substr(0, file.name.indexOf("_"));
-                let group = null;
-                for (const c of classGroups) {
-                    if (c.name === name) {
-                        group = c;
-                        break;
-                    }
-                }
-                if (!group) {
-                    group = {
-                        id: classId,
-                        name,
-                        count: 1,
-                        images: [file],
-                    };
-                    classGroups.push(group);
-                } else {
-                    group.count++;
-                    group.images.push(file);
-                }
-            }
+            const data = await axios.get(`/api/dataset`);
+            let classGroups = data.data.data;
+
             return classGroups;
         },
         // enabled: mobileNetBase !== undefined && useModel !== undefined,
@@ -335,10 +301,10 @@ function App() {
 
     return (
         <Container className="container-dataset">
-            <Row>
-                <a href="/">
-                    <Button>Back</Button>
-                </a>
+            <Row className="mb-2">
+                <div>
+                    <Button href="/">Back</Button>
+                </div>
             </Row>
             <Row>
                 <Col md={6}>
@@ -382,6 +348,10 @@ function App() {
                             onClick={() => {
                                 setCapturing(!capturing);
                                 capturingRef.current = !capturing;
+                                scrollToBottom();
+                                if (capturing) {
+                                    setModelValue("");
+                                }
                             }}
                         >
                             {capturing ? "Stop" : "Detect Face"}
@@ -411,6 +381,9 @@ function App() {
                                       action
                                       onClick={() => {
                                           setModelValue(m.uid);
+                                          setCapturing(false);
+                                          capturingRef.current = false;
+                                          scrollToBottom();
                                       }}
                                       active={modelValue == m.uid}
                                   >
@@ -420,7 +393,7 @@ function App() {
                             : null}
                     </ListGroup>
                     {predictRes === undefined || !capturing ? null : (
-                        <p>
+                        <p className="mt-2">
                             Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
                         </p>
                     )}

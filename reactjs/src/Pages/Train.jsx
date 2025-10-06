@@ -16,6 +16,8 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import ListGroup from "react-bootstrap/ListGroup";
+import InputGroup from "react-bootstrap/InputGroup";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -42,12 +44,14 @@ function App() {
     const [model, setModel] = useState(undefined);
     const [mobileNetBase, setMobileNetBase] = useState(undefined);
     const [trainingComplete, setTrainingComplete] = useState(false);
+    const [modelName, setModelName] = useState("");
 
     const isMobile = browserWidth <= 768;
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
     }
+
     useEffect(() => {
         window.addEventListener("resize", handleWindowSizeChange);
         return () => {
@@ -81,49 +85,56 @@ function App() {
         });
     };
 
-    const processImage = async (cc) => {
-        let pn = `${cc.id}_${cc.name}/${cc.data.name}${cc.data.ext}`;
-        let url = `http://localhost:5172/api/dataset/${pn}`;
-        url = encodeURI(url);
-        let response = await axios.get(url);
-        let base64img = response.data.data;
-        if (!base64img) {
-            return;
-        }
-        if (mobileNetBase === undefined) {
-            console.log("Mobile net base is undefined");
-        }
-        let fetchRes = await fetch(base64img);
-        let fetchBlob = await fetchRes.blob();
-        let bmp = await createImageBitmap(fetchBlob);
-        let imageTensor = tf.tidy(function () {
-            // read file bytes
-            let videoFrameAsTensor = tf.browser.fromPixels(bmp);
-            // Resize video frame tensor to be 224 x 224 pixels which is needed by MobileNet for input.
-            let resizedTensorFrame = tf.image.resizeBilinear(
-                videoFrameAsTensor,
-                [Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH],
-                true
-            );
+    const processImage = async (classGroup) => {
+        try {
+            let pn = `${classGroup.id}_${classGroup.name}/${classGroup.data.name}${classGroup.data.ext}`;
+            let url = `/api/dataset/${pn}`;
+            url = encodeURI(url);
+            // let response = await axios.get(url);
+            // let base64img = response.data;
+            // if (!base64img) {
+            //     return;
+            // }
+            // if (mobileNetBase === undefined) {
+            //     console.log("Mobile net base is undefined");
+            // }
+            // let fetchRes = await fetch(base64img);
+            // let fetchBlob = await fetchRes.blob();
+            // let fetchBlob = await base64img.blob();
 
-            let normalizedTensorFrame = resizedTensorFrame.div(255);
+            let fetchBlob = await axios.get(url, { responseType: "blob" });
+            let bmp = await createImageBitmap(fetchBlob.data);
+            let imageTensor = tf.tidy(function () {
+                // read file bytes
+                let videoFrameAsTensor = tf.browser.fromPixels(bmp);
+                // Resize video frame tensor to be 224 x 224 pixels which is needed by MobileNet for input.
+                let resizedTensorFrame = tf.image.resizeBilinear(
+                    videoFrameAsTensor,
+                    [Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH],
+                    true
+                );
 
-            return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
-        });
+                let normalizedTensorFrame = resizedTensorFrame.div(255);
 
-        if (imageTensor === null) {
-            return;
-        }
+                return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
+            });
 
-        // images.push({ id: cc.id, name: cc.name, data });
-        trainingDataInputs.push(imageTensor);
-        trainingDataOutputs.push(cc.id);
-        classesTensors.push(imageTensor);
-        classesTensorLabels.push(cc.id);
-        // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
-        let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
-        if (dataCount > highestDataCount) {
-            setHighestDataCount(dataCount);
+            if (imageTensor === null) {
+                return;
+            }
+
+            // images.push({ id: cc.id, name: cc.name, data });
+            trainingDataInputs.push(imageTensor);
+            trainingDataOutputs.push(classGroup.id);
+            classesTensors.push(imageTensor);
+            classesTensorLabels.push(classGroup.id);
+            // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
+            let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
+            if (dataCount > highestDataCount) {
+                setHighestDataCount(dataCount);
+            }
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -155,6 +166,7 @@ function App() {
     };
 
     const trainAndPredict = async () => {
+        setTrainingComplete(false);
         let model = tf.sequential();
         model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
         model.add(tf.layers.dense({ units: dataset.length, activation: "softmax" }));
@@ -204,8 +216,21 @@ function App() {
         combinedModel.summary();
         console.log("TRAINING COMPLETE");
         // await combinedModel.save("downloads://my-model");
-        await model.save("http://localhost:5172/api/train");
+        let resp = await model.save(`/api/train`);
 
+        let newName = modelName;
+        for (const r of resp.responses) {
+            r.json().then(async (rr) => {
+                console.log(rr);
+                let respRename = await axios.post(`/api/train/rename`, {
+                    oldName: rr.data.uuid,
+                    newName: newName,
+                });
+                modelsQuery.refetch();
+            });
+        }
+
+        setModelName("");
         // axios.post("http://localhost:5172/api/train", { name: "unique", data: combinedModel });
 
         // predictLoop();
@@ -219,38 +244,20 @@ function App() {
     };
 
     const fetchQuery = async () => {
-        const data = await axios.get("http://localhost:5172/api/dataset");
-        let classGroups = [];
-        for (const file of data.data.data) {
-            let a = file.filepath.substr(0, file.filepath.lastIndexOf("\\"));
-            let b = a.substr(a.lastIndexOf("\\") + 1);
-            let classId = b.substr(0, b.indexOf("_"));
-            let name = file.name.substr(0, file.name.indexOf("_"));
-            let group = null;
-            for (const c of classGroups) {
-                if (c.name === name) {
-                    group = c;
-                    break;
-                }
-            }
-            if (!group) {
-                group = {
-                    id: classId,
-                    name,
-                    count: 1,
-                    images: [file],
-                };
-                classGroups.push(group);
-            } else {
-                group.count++;
-                group.images.push(file);
-            }
+        const data = await axios.get(`/api/dataset`);
+        let classGroups = data.data.data;
+        for (const g of classGroups) {
+            g.count = g.data.length;
+            for (const file of g.data) {
+                let id = g.id;
+                let name = g.name;
 
-            processImage({
-                id: group.id,
-                name,
-                data: file,
-            });
+                await processImage({
+                    id,
+                    name,
+                    data: file,
+                });
+            }
         }
         return classGroups;
     };
@@ -265,24 +272,33 @@ function App() {
         enabled: mobileNetBase !== undefined && trainingDataInputs.length === 0,
     });
 
+    const fetchModelsQuery = async () => {
+        const data = await axios.get(`/api/train`);
+        return data.data.data;
+    };
+
+    const modelsQuery = useQuery({
+        queryKey: ["models"],
+        queryFn: fetchModelsQuery,
+    });
+
     return (
         <Container className="container-training">
-            <Row>
-                <a href="/">
-                    <Button>Back</Button>
-                </a>
+            <Row className="mb-2">
+                <div>
+                    <Button href="/">Back</Button>
+                </div>
             </Row>
             <Row>
                 <Col md={12}>
                     <h3>Classes</h3>
 
                     <div>
-                        <h4>Data from server</h4>
                         {status === "pending" ? <span>Loading...</span> : null}
                         {status === "success" ? (
                             <div className="d-grid gap-2 mt-2">
                                 {dataset.map((d) => (
-                                    <Button key={d.id} size="lg">
+                                    <Button key={d.id} variant="outline-secondary" disabled>
                                         {d.name} ({d.count})
                                     </Button>
                                 ))}
@@ -291,19 +307,26 @@ function App() {
                     </div>
 
                     {dataset !== undefined ? (
-                        <div className="mt-2">
+                        <div className="d-grid mt-2 ">
+                            <InputGroup className="mb-2">
+                                <InputGroup.Text>Model Name</InputGroup.Text>
+                                <Form.Control value={modelName} onChange={(e) => setModelName(e.target.value)} placeholder="Awesome Model" />
+                            </InputGroup>
                             <Button
+                                className="mb-2"
+                                variant="success"
                                 disabled={highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)}
                                 title="Data count needs to be the same across all class"
                                 onClick={() => {
                                     console.log("TRAINING");
                                     textToast("Training started");
+
                                     setTimeout(async () => {
                                         await trainAndPredict();
                                     }, 500);
                                 }}
                             >
-                                Train on {dataset.length} classes
+                                Train {modelName} on {dataset.length} classes
                             </Button>
                             <p>Highest data count: {highestDataCount}</p>
                             <p>
@@ -312,6 +335,12 @@ function App() {
                             </p>
                         </div>
                     ) : null}
+
+                    <h3>Models</h3>
+                    <ListGroup>
+                        {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
+                        {modelsQuery.status === "success" ? modelsQuery.data.map((m) => <ListGroup.Item key={m.uid}>{m.uid}</ListGroup.Item>) : null}
+                    </ListGroup>
                 </Col>
             </Row>
 
