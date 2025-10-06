@@ -84,7 +84,7 @@ services:
                 - path: ./expressjs/package.json
                   action: rebuild
         labels:
-            traefik.http.routers.backend.rule: Host(`ksdedicated.work`) && PathPrefix(`/api`)
+            traefik.http.routers.backend.rule: Host(`kstf.ksdedicated.work`) && PathPrefix(`/api`)
             traefik.http.services.backend.loadbalancer.server.port: 5172
 
     ###################################################
@@ -114,7 +114,7 @@ services:
                 - path: ./reactjs/package.json
                   action: rebuild
         labels:
-            traefik.http.routers.client.rule: Host(`ksdedicated.work`)
+            traefik.http.routers.client.rule: Host(`kstf.ksdedicated.work`)
             traefik.http.services.client.loadbalancer.server.port: 5173
 
     ###################################################
