@@ -5,23 +5,27 @@ import util from "util";
 export function readFilesSync(dir) {
     const files = [];
 
-    fs.readdirSync(dir).forEach((foldername) => {
-        fs.readdirSync(path.resolve(dir, foldername)).forEach((filename) => {
-            const name = path.parse(filename).name;
-            const ext = path.parse(filename).ext;
-            const filepath = path.resolve(path.resolve(dir, foldername), filename);
-            const stat = fs.statSync(filepath);
-            const isFile = stat.isFile();
+    try {
+        fs.readdirSync(dir).forEach((foldername) => {
+            fs.readdirSync(path.resolve(dir, foldername)).forEach((filename) => {
+                const name = path.parse(filename).name;
+                const ext = path.parse(filename).ext;
+                const filepath = path.resolve(path.resolve(dir, foldername), filename);
+                const stat = fs.statSync(filepath);
+                const isFile = stat.isFile();
 
-            if (isFile) files.push({ filepath, name, ext, stat });
+                if (isFile) files.push({ filepath, name, ext, stat });
+            });
         });
-    });
 
-    files.sort((a, b) => {
-        // natural sort alphanumeric strings
-        // https://stackoverflow.com/a/38641281
-        return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
-    });
+        files.sort((a, b) => {
+            // natural sort alphanumeric strings
+            // https://stackoverflow.com/a/38641281
+            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+        });
+    } catch (err) {
+        console.error(err);
+    }
 
     return files;
 }
