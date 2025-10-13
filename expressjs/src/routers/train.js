@@ -4,9 +4,10 @@ import { uuidv4, readFilesSync, readFilesSync2 } from "../helpers/misc.js";
 import multer from "multer";
 import path from "path";
 
+const dirname = "./src/public/model";
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "./src/public/model/"); // Specify the destination folder
+        cb(null, dirname); // Specify the destination folder
     },
     filename: function (req, file, cb) {
         // You can customize the filename here
@@ -20,7 +21,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 const router = express.Router();
-const dirname = "./src/public/model";
 
 // middleware that is specific to this router
 // const timeLog = (req, res, next) => {
@@ -129,15 +129,15 @@ router.post("/", upload.any(), (req, res) => {
     // let dir = `./public/model/${model.name}_${uuid}`;
 
     let createdfolder = fs.mkdirSync(dirname, { recursive: true });
-    console.log("createdfolder", createdfolder);
+    // console.log("createdfolder", createdfolder);
 
     // console.log(model);
     let filesToReturn = [];
     for (const file of req.files) {
         let fn = file.filename;
-        console.log("trace", "dirname", dirname, "fn", fn);
+        // console.log("trace", "dirname", dirname, "fn", fn);
         let p = path.resolve(dirname, fn);
-        console.log("trace", p, "dirname", dirname, "fn", fn);
+        // console.log("trace", p, "dirname", dirname, "fn", fn);
 
         if (fs.existsSync(p)) {
             let newFolderPath = path.resolve(dirname, uuid);

@@ -68,6 +68,8 @@ services:
         build:
             context: ./
             target: backend-dev
+        volumes:
+            - ./expressjs/src/public:/usr/local/kstf-web/src/public
         environment:
             MYSQL_HOST: mysql
             MYSQL_USER: root
