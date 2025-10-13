@@ -10,12 +10,30 @@ import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import Constants from "../Misc/Constants.jsx";
 
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
+// import Container from "react-bootstrap/Container";
+// import Row from "react-bootstrap/Row";
+// import Col from "react-bootstrap/Col";
+// import Button from "react-bootstrap/Button";
+// import Form from "react-bootstrap/Form";
+// import ButtonGroup from "react-bootstrap/ButtonGroup";
+
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import ButtonGroup from "@mui/material/ButtonGroup";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -31,7 +49,7 @@ function App() {
     let canvas = useRef(null);
     let canvasctx = useRef(null);
     const [devices, setDevices] = useState([]);
-    const [activeDeviceId, setActiveDeviceId] = useState(undefined);
+    const [activeDeviceId, setActiveDeviceId] = useState("");
     const [capturing, setCapturing] = useState(false);
 
     const detectorModel = faceDetection.SupportedModels.MediaPipeFaceDetector;
@@ -78,8 +96,11 @@ function App() {
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter((i) => i.kind == "videoinput");
             setDevices(videoDevices);
+            if (videoDevices.length > 0) {
+                setActiveDeviceId(videoDevices[0].deviceId);
+            }
         })();
-    });
+    }, []);
 
     useEffect(() => {
         (async () => {
@@ -300,137 +321,155 @@ function App() {
 
     return (
         <Container className="container-dataset">
-            <Row className="mb-2">
-                <div>
-                    <Button href="/">Back</Button>
-                </div>
-            </Row>
-            <Row>
-                <Col md={6}>
-                    <h3>{isMobile ? "Mobile" : "PC"}</h3>
-                    <Form.Select
+            <Grid container columns={12} spacing={2}>
+                <Grid size={12}>
+                    <Button variant="contained" href="/">
+                        Back
+                    </Button>
+                </Grid>
+
+                <Grid size={{ sm: 12, md: 6 }}>
+                    {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
+                    <Select
                         onChange={(event) => {
                             setActiveDeviceId(event.target.value);
                         }}
+                        value={activeDeviceId}
+                        fullWidth
                     >
                         {devices.map((d) => (
-                            <option key={d.deviceId} value={d.deviceId}>
+                            <MenuItem key={d.deviceId} value={d.deviceId}>
                                 {d.label}
-                            </option>
+                            </MenuItem>
                         ))}
-                    </Form.Select>
-                    <div className="m-2">
-                        <Camera
-                            ref={camera}
-                            numberOfCamerasCallback={setNumberOfCameras}
-                            aspectRatio={isMobile ? 3 / 4 : 4 / 3}
-                            videoSourceDeviceId={activeDeviceId}
-                            videoReadyCallback={async () => {
-                                console.log("Video feed ready.");
-                            }}
-                        />
-                        <canvas className="canvas1 d-none" />
-                        <canvas className="canvas2 d-none" />
-                    </div>
-
-                    <ButtonGroup>
-                        <Button
-                            hidden={numberOfCameras <= 1}
-                            onClick={() => {
-                                camera.current.switchCamera();
-                            }}
-                        >
-                            Change Camera
-                        </Button>
-                        <Button
-                            hidden={numberOfCameras <= 1}
-                            onClick={() => {
-                                setCapturing(!capturing);
-                                capturingRef.current = !capturing;
-                            }}
-                        >
-                            {capturing ? "Stop" : "Detect Face"}
-                        </Button>
-                    </ButtonGroup>
-                    <div className="m-2">
-                        <img className="img1" />
-                        <Button
-                            hidden={image == null}
-                            onClick={() => {
-                                clearPreview();
-                            }}
-                        >
-                            Clear
-                        </Button>
-                    </div>
-                </Col>
-
-                <Col md={6}>
-                    <h3>Classes</h3>
-                    <div className="input-group">
-                        <span className="input-group-text">Class Name</span>
-                        <input
-                            className="form-control classname-input"
-                            value={className}
-                            onChange={(e) => setClassName(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.code == "Enter") {
-                                    inputClass();
-                                }
-                            }}
-                        />
-                        <Button onClick={inputClass} disabled={status !== "success"}>
-                            Add
-                        </Button>
-                    </div>
-                    <div className="d-grid gap-2 mt-2">
-                        {classes.map((c) => (
-                            <Button
-                                key={c.id}
-                                size="lg"
-                                onMouseDown={async () => {
-                                    await captureImage(c);
-                                }}
-                            >
-                                {c.name} ({c.count})
-                            </Button>
-                        ))}
-                    </div>
-                    <div className="mt-2">
-                        {mutation.isPending ? (
-                            "Saving..."
-                        ) : (
-                            <>
-                                <Row>
-                                    <Col md={12}>
-                                        <div className="d-grid">
-                                            <Button onClick={saveToServer} variant="success" disabled={!dataChanged}>
-                                                Save
-                                            </Button>
-                                        </div>
-                                        {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
-                                        {mutation.isSuccess ? <span>Save success!</span> : null}
-                                    </Col>
-                                </Row>
-                            </>
-                        )}
-                    </div>
-                    <div className="mt-2">
-                        <h4>Data from server</h4>
-                        {status === "pending" ? <span>Loading...</span> : null}
-                        {status === "success" ? (
-                            <div className="d-grid gap-2 mt-2">
-                                {dataset.map((d) => (
-                                    <Button key={d.id} variant="outline-secondary" disabled>
-                                        {d.name} ({d.count})
-                                    </Button>
-                                ))}
+                    </Select>
+                    <Grid container columns={12}>
+                        <Grid size={6}>
+                            <div className="m-2" style={{ width: "100%" }}>
+                                <Camera
+                                    ref={camera}
+                                    numberOfCamerasCallback={setNumberOfCameras}
+                                    aspectRatio={isMobile ? 3 / 4 : 4 / 3}
+                                    videoSourceDeviceId={activeDeviceId}
+                                    videoReadyCallback={async () => {
+                                        console.log("Video feed ready.");
+                                    }}
+                                />
+                                <canvas className="canvas1 d-none" />
+                                <canvas className="canvas2 d-none" />
                             </div>
-                        ) : null}
-                    </div>
-                </Col>
-            </Row>
 
+                            <ButtonGroup variant="outlined">
+                                <Button
+                                    hidden={numberOfCameras <= 1}
+                                    onClick={() => {
+                                        camera.current.switchCamera();
+                                    }}
+                                >
+                                    Flip Camera
+                                </Button>
+                                <Button
+                                    hidden={numberOfCameras <= 1}
+                                    onClick={() => {
+                                        setCapturing(!capturing);
+                                        capturingRef.current = !capturing;
+                                    }}
+                                >
+                                    {capturing ? "Stop Track" : "Track Face"}
+                                </Button>
+                            </ButtonGroup>
+                        </Grid>
+                        <Grid size={6}>
+                            <div className="m-2">
+                                <img className="img1" />
+                                {image != null ? (
+                                    <Button
+                                        onClick={() => {
+                                            clearPreview();
+                                        }}
+                                        variant="contained"
+                                    >
+                                        Clear
+                                    </Button>
+                                ) : null}
+                            </div>
+                        </Grid>
+                    </Grid>
+                </Grid>
+                <Grid size={{ sm: 12, md: 6 }}>
+                    <Grid container spacing={1} columns={12}>
+                        <Grid size={12}>
+                            <h3>Classes</h3>
+                        </Grid>
+                        <Grid size={10}>
+                            <TextField
+                                className="form-control classname-input"
+                                value={className}
+                                onChange={(e) => setClassName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.code == "Enter") {
+                                        inputClass();
+                                    }
+                                }}
+                                variant="filled"
+                                label="Class name"
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid size={2}>
+                            <Button onClick={inputClass} disabled={status !== "success"} variant="contained">
+                                Add
+                            </Button>
+                        </Grid>
+                        <Grid size={12}>
+                            <Grid container spacing={2}>
+                                {classes.map((c) => (
+                                    <Grid>
+                                        <Button
+                                            key={c.id}
+                                            size="lg"
+                                            onMouseDown={async () => {
+                                                await captureImage(c);
+                                            }}
+                                            variant="contained"
+                                        >
+                                            {c.name} ({c.count})
+                                        </Button>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Grid>
+                        <Grid size={12}>
+                            {mutation.isPending ? (
+                                "Saving..."
+                            ) : (
+                                <>
+                                    <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged}>
+                                        Save
+                                    </Button>
+                                    {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
+                                    {mutation.isSuccess ? <span>Save success!</span> : null}
+                                </>
+                            )}
+                        </Grid>
+                        <Grid size={12}>
+                            <h4>Data from server</h4>
+                            {status === "pending" ? <span>Loading...</span> : null}
+                            {status === "success" ? (
+                                <Grid container spacing={2}>
+                                    {dataset.map((d) => (
+                                        <Grid>
+                                            <Button key={d.id} variant="outlined" disabled>
+                                                {d.name} ({d.count})
+                                            </Button>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            ) : null}
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
             <ToastContainer limit={5} />
         </Container>
     );

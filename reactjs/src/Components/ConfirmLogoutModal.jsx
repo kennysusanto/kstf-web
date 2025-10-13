@@ -1,5 +1,12 @@
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
+// import Button from "react-bootstrap/Button";
+// import Modal from "react-bootstrap/Modal";
+
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 export default function ConfirmLogoutModal({ props }) {
     const { show, setShow, logout } = props;
@@ -11,7 +18,7 @@ export default function ConfirmLogoutModal({ props }) {
 
     return (
         <>
-            <Modal show={show} onHide={handleClose}>
+            {/* <Modal show={show} onHide={handleClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Logout</Modal.Title>
                 </Modal.Header>
@@ -24,7 +31,21 @@ export default function ConfirmLogoutModal({ props }) {
                         Logout
                     </Button>
                 </Modal.Footer>
-            </Modal>
+            </Modal> */}
+            <Dialog open={show} onClose={handleClose} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
+                <DialogTitle id="alert-dialog-title">{"Confirm Logout"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">You are logging out! Continue?</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} variant="outlined">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleConfirmLogout} autoFocus variant="contained" color="error">
+                        Logout
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

@@ -5,6 +5,10 @@
   /* text-align: center; */
 }
 
+html, body, #root {
+  background-color: rgba(246, 247, 248, 0.5) !important;
+}
+
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

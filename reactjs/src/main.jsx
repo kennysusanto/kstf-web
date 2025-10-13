@@ -10,9 +10,11 @@ import Face from "./Face.jsx";
 import DatasetPage from "./Pages/Dataset.jsx";
 import TrainPage from "./Pages/Train.jsx";
 import PredictPage from "./Pages/Predict.jsx";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthProvider, AuthContext } from "./AuthContext.jsx";
 import LoginPage from "./Pages/Login.jsx";
+
+import CssBaseline from "@mui/material/CssBaseline";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -23,14 +25,6 @@ const router = createBrowserRouter([
         path: "/",
         element: <Splash />,
     },
-    // {
-    //     path: "/App",
-    //     element: <App />,
-    // },
-    // {
-    //     path: "/Menu",
-    //     element: <Menu />,
-    // },
     {
         path: "/Face",
         element: <Face />,
@@ -54,13 +48,15 @@ const Main = () => {
 
     return (
         <>
-            {isLoggedIn ? (
-                <QueryClientProvider client={queryClient}>
-                    <RouterProvider router={router} />
-                </QueryClientProvider>
-            ) : (
-                <LoginPage />
-            )}
+            <CssBaseline>
+                {isLoggedIn ? (
+                    <QueryClientProvider client={queryClient}>
+                        <RouterProvider router={router} />
+                    </QueryClientProvider>
+                ) : (
+                    <LoginPage />
+                )}
+            </CssBaseline>
         </>
     );
 };

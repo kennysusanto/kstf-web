@@ -10,14 +10,36 @@ import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import Constants from "../Misc/Constants.jsx";
 
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
-import ToggleButton from "react-bootstrap/ToggleButton";
-import ListGroup from "react-bootstrap/ListGroup";
+// import Container from "react-bootstrap/Container";
+// import Row from "react-bootstrap/Row";
+// import Col from "react-bootstrap/Col";
+// import Button from "react-bootstrap/Button";
+// import Form from "react-bootstrap/Form";
+// import ButtonGroup from "react-bootstrap/ButtonGroup";
+// import ToggleButton from "react-bootstrap/ToggleButton";
+// import ListGroup from "react-bootstrap/ListGroup";
+
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemButton from "@mui/material/ListItemButton";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -33,7 +55,7 @@ function App() {
     let canvas = useRef(null);
     let canvasctx = useRef(null);
     const [devices, setDevices] = useState([]);
-    const [activeDeviceId, setActiveDeviceId] = useState(undefined);
+    const [activeDeviceId, setActiveDeviceId] = useState("");
     const [capturing, setCapturing] = useState(false);
 
     const detectorModel = faceDetection.SupportedModels.MediaPipeFaceDetector;
@@ -82,8 +104,11 @@ function App() {
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter((i) => i.kind == "videoinput");
             setDevices(videoDevices);
+            if (videoDevices.length > 0) {
+                setActiveDeviceId(videoDevices[0].deviceId);
+            }
         })();
-    });
+    }, []);
 
     useEffect(() => {
         (async () => {
@@ -301,105 +326,111 @@ function App() {
 
     return (
         <Container className="container-dataset">
-            <Row className="mb-2">
-                <div>
-                    <Button href="/">Back</Button>
-                </div>
-            </Row>
-            <Row>
-                <Col md={6}>
-                    <h3>{isMobile ? "Mobile" : "PC"}</h3>
-                    <Form.Select
+            <Grid container columns={12} spacing={2}>
+                <Button variant="contained" href="/">
+                    Back
+                </Button>
+
+                <Grid size={{ sm: 12, md: 6 }}>
+                    {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
+                    <Select
                         onChange={(event) => {
                             setActiveDeviceId(event.target.value);
                         }}
+                        value={activeDeviceId}
+                        fullWidth
                     >
                         {devices.map((d) => (
-                            <option key={d.deviceId} value={d.deviceId}>
+                            <MenuItem key={d.deviceId} value={d.deviceId}>
                                 {d.label}
-                            </option>
+                            </MenuItem>
                         ))}
-                    </Form.Select>
-                    <div className="m-2">
-                        <Camera
-                            ref={camera}
-                            numberOfCamerasCallback={setNumberOfCameras}
-                            aspectRatio={isMobile ? 3 / 4 : 4 / 3}
-                            videoSourceDeviceId={activeDeviceId}
-                            videoReadyCallback={async () => {
-                                console.log("Video feed ready.");
-                            }}
-                        />
-                        <canvas className="canvas1 d-none" />
-                        <canvas className="canvas2 d-none" />
-                    </div>
+                    </Select>
+                    <Grid container columns={12}>
+                        <Grid size={6}>
+                            <div className="m-2" style={{ width: "100%" }}>
+                                <Camera
+                                    ref={camera}
+                                    numberOfCamerasCallback={setNumberOfCameras}
+                                    aspectRatio={isMobile ? 3 / 4 : 4 / 3}
+                                    videoSourceDeviceId={activeDeviceId}
+                                    videoReadyCallback={async () => {
+                                        console.log("Video feed ready.");
+                                    }}
+                                />
+                                <canvas className="canvas1 d-none" />
+                                <canvas className="canvas2 d-none" />
+                            </div>
 
-                    <ButtonGroup>
-                        <Button
-                            hidden={numberOfCameras <= 1}
-                            onClick={() => {
-                                camera.current.switchCamera();
-                            }}
-                        >
-                            Change Camera
-                        </Button>
-                        <Button
-                            hidden={numberOfCameras <= 1}
-                            onClick={() => {
-                                setCapturing(!capturing);
-                                capturingRef.current = !capturing;
-                                scrollToBottom();
-                                if (capturing) {
-                                    setModelValue("");
-                                }
-                            }}
-                        >
-                            {capturing ? "Stop" : "Detect Face"}
-                        </Button>
-                    </ButtonGroup>
-                    <div className="m-2">
-                        <img className="img1" />
-                        <Button
-                            hidden={image == null}
-                            onClick={() => {
-                                clearPreview();
-                            }}
-                        >
-                            Clear
-                        </Button>
-                    </div>
-                </Col>
-
-                <Col md={6}>
+                            <ButtonGroup variant="outlined">
+                                <Button
+                                    hidden={numberOfCameras <= 1}
+                                    onClick={() => {
+                                        camera.current.switchCamera();
+                                    }}
+                                >
+                                    Flip Camera
+                                </Button>
+                                <Button
+                                    hidden={numberOfCameras <= 1}
+                                    onClick={() => {
+                                        setCapturing(!capturing);
+                                        capturingRef.current = !capturing;
+                                        scrollToBottom();
+                                        if (capturing) {
+                                            setModelValue("");
+                                        }
+                                    }}
+                                >
+                                    {capturing ? "Stop Track" : "Track Face"}
+                                </Button>
+                            </ButtonGroup>
+                        </Grid>
+                        <Grid size={6}>
+                            <div className="m-2">
+                                <img className="img1" />
+                                {image != null ? (
+                                    <Button
+                                        onClick={() => {
+                                            clearPreview();
+                                        }}
+                                        variant="contained"
+                                    >
+                                        Clear
+                                    </Button>
+                                ) : null}
+                                {predictRes === undefined || !capturing ? null : (
+                                    <p className="mt-2">
+                                        Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
+                                    </p>
+                                )}
+                            </div>
+                        </Grid>
+                    </Grid>
+                </Grid>
+                <Grid size={{ sm: 12, md: 6 }}>
                     <h3>Models</h3>
-                    <ListGroup>
+                    <List>
                         {status === "pending" ? <span>Loading...</span> : null}
                         {status === "success"
                             ? models.map((m) => (
-                                  <ListGroup.Item
+                                  <ListItemButton
                                       key={m.uid}
-                                      action
                                       onClick={() => {
                                           setModelValue(m.uid);
                                           setCapturing(false);
                                           capturingRef.current = false;
                                           scrollToBottom();
                                       }}
-                                      active={modelValue == m.uid}
+                                      selected={modelValue == m.uid}
                                   >
-                                      {m.uid}
-                                  </ListGroup.Item>
+                                      <ListItemText primary={m.uid}></ListItemText>
+                                  </ListItemButton>
                               ))
                             : null}
-                    </ListGroup>
-                    {predictRes === undefined || !capturing ? null : (
-                        <p className="mt-2">
-                            Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
-                        </p>
-                    )}
-                </Col>
-            </Row>
-
+                    </List>
+                </Grid>
+            </Grid>
             <ToastContainer limit={5} />
         </Container>
     );

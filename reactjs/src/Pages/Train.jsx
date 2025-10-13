@@ -10,14 +10,36 @@ import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import Constants from "../Misc/Constants.jsx";
 
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
-import ListGroup from "react-bootstrap/ListGroup";
-import InputGroup from "react-bootstrap/InputGroup";
+// import Container from "react-bootstrap/Container";
+// import Row from "react-bootstrap/Row";
+// import Col from "react-bootstrap/Col";
+// import Button from "react-bootstrap/Button";
+// import Form from "react-bootstrap/Form";
+// import ButtonGroup from "react-bootstrap/ButtonGroup";
+// import ListGroup from "react-bootstrap/ListGroup";
+// import InputGroup from "react-bootstrap/InputGroup";
+
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import InputLabel from "@mui/material/InputLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemButton from "@mui/material/ListItemButton";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -285,66 +307,96 @@ function App() {
 
     return (
         <Container className="container-training">
-            <Row className="mb-2">
-                <div>
-                    <Button href="/">Back</Button>
-                </div>
-            </Row>
-            <Row>
-                <Col md={12}>
-                    <h3>Classes</h3>
+            <Grid container columns={12} spacing={2}>
+                <Button variant="contained" href="/">
+                    Back
+                </Button>
 
-                    <div>
-                        {status === "pending" ? <span>Loading...</span> : null}
-                        {status === "success" ? (
-                            <div className="d-grid gap-2 mt-2">
-                                {dataset.map((d) => (
-                                    <Button key={d.id} variant="outline-secondary" disabled>
-                                        {d.name} ({d.count})
-                                    </Button>
-                                ))}
+                <Grid size={{ sm: 12, md: 6 }}>
+                    <Grid container spacing={2} columns={12}>
+                        <Grid size={12}>
+                            <h3>Classes</h3>
+                        </Grid>
+                        <Grid size={12}>
+                            <div>
+                                {status === "pending" ? <span>Loading...</span> : null}
+                                {status === "success" ? (
+                                    <Grid container spacing={2}>
+                                        {dataset.map((d) => (
+                                            <Grid>
+                                                <Button key={d.id} variant="outlined" disabled>
+                                                    {d.name} ({d.count})
+                                                </Button>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                ) : null}
                             </div>
-                        ) : null}
-                    </div>
+                        </Grid>
+                        <Grid size={12}>
+                            {dataset !== undefined ? (
+                                <Grid container columns={12} spacing={2}>
+                                    <Grid size={12}>
+                                        <TextField
+                                            value={modelName}
+                                            label="Model name"
+                                            onChange={(e) => setModelName(e.target.value)}
+                                            placeholder="Awesome Model"
+                                            variant="filled"
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                    <Grid size={12}>
+                                        <Button
+                                            className="mb-2"
+                                            variant="contained"
+                                            color="success"
+                                            disabled={
+                                                highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
+                                            }
+                                            title="Data count needs to be the same across all class"
+                                            onClick={() => {
+                                                console.log("TRAINING");
+                                                textToast("Training started");
 
-                    {dataset !== undefined ? (
-                        <div className="d-grid mt-2 ">
-                            <InputGroup className="mb-2">
-                                <InputGroup.Text>Model Name</InputGroup.Text>
-                                <Form.Control value={modelName} onChange={(e) => setModelName(e.target.value)} placeholder="Awesome Model" />
-                            </InputGroup>
-                            <Button
-                                className="mb-2"
-                                variant="success"
-                                disabled={highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)}
-                                title="Data count needs to be the same across all class"
-                                onClick={() => {
-                                    console.log("TRAINING");
-                                    textToast("Training started");
-
-                                    setTimeout(async () => {
-                                        await trainAndPredict();
-                                    }, 500);
-                                }}
-                            >
-                                Train {modelName} on {dataset.length} classes
-                            </Button>
-                            <p>Highest data count: {highestDataCount}</p>
-                            <p>
-                                All class length the same as highest data count:{" "}
-                                {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
-                            </p>
-                        </div>
-                    ) : null}
-
-                    <h3>Models</h3>
-                    <ListGroup>
-                        {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
-                        {modelsQuery.status === "success" ? modelsQuery.data.map((m) => <ListGroup.Item key={m.uid}>{m.uid}</ListGroup.Item>) : null}
-                    </ListGroup>
-                </Col>
-            </Row>
-
+                                                setTimeout(async () => {
+                                                    await trainAndPredict();
+                                                }, 500);
+                                            }}
+                                        >
+                                            Train {modelName} on {dataset.length} classes
+                                        </Button>
+                                    </Grid>
+                                    <Grid size={12}>
+                                        <span>Highest data count: {highestDataCount}</span>
+                                    </Grid>
+                                    <Grid size={12}>
+                                        <span>
+                                            All class length the same as highest data count:{" "}
+                                            {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
+                                        </span>
+                                    </Grid>
+                                </Grid>
+                            ) : null}
+                        </Grid>
+                        <Grid size={12}>
+                            <h3>Models</h3>
+                        </Grid>
+                        <Grid size={12}>
+                            <List>
+                                {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
+                                {modelsQuery.status === "success"
+                                    ? modelsQuery.data.map((m) => (
+                                          <ListItemButton key={m.uid}>
+                                              <ListItemText primary={m.uid}></ListItemText>
+                                          </ListItemButton>
+                                      ))
+                                    : null}
+                            </List>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
             <ToastContainer limit={5} />
         </Container>
     );
