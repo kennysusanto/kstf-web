@@ -7,15 +7,17 @@ export function readFilesSync(dir) {
 
     try {
         fs.readdirSync(dir).forEach((foldername) => {
-            fs.readdirSync(path.resolve(dir, foldername)).forEach((filename) => {
-                const name = path.parse(filename).name;
-                const ext = path.parse(filename).ext;
-                const filepath = path.resolve(path.resolve(dir, foldername), filename);
-                const stat = fs.statSync(filepath);
-                const isFile = stat.isFile();
+            try {
+                fs.readdirSync(path.resolve(dir, foldername)).forEach((filename) => {
+                    const name = path.parse(filename).name;
+                    const ext = path.parse(filename).ext;
+                    const filepath = path.resolve(path.resolve(dir, foldername), filename);
+                    const stat = fs.statSync(filepath);
+                    const isFile = stat.isFile();
 
-                if (isFile) files.push({ filepath, name, ext, stat });
-            });
+                    if (isFile) files.push({ filepath, name, ext, stat });
+                });
+            } catch (err) {}
         });
 
         files.sort((a, b) => {

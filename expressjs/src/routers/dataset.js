@@ -74,7 +74,7 @@ router.post("/", (req, res) => {
         let { id, name, data } = group;
         let uuid = uuidv4();
         dd.push({ id, name, uuid });
-        let dir = `./src/public/dataset/${id}_${name}`;
+        let dir = `${dirname}/${id}_${name}`;
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -86,6 +86,14 @@ router.post("/", (req, res) => {
         fs.writeFileSync(`${dir}/${name}_${uuid}.png`, buff);
     }
     res.json({ data: dd });
+});
+
+router.delete("/:folder/:filename", (req, res) => {
+    let dir = `${dirname}/${req.params.folder}/${req.params.filename}`;
+    fs.unlinkSync(dir);
+    res.json({
+        data: "success",
+    });
 });
 
 export default router;

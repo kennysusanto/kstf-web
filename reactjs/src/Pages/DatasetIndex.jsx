@@ -87,11 +87,29 @@ function App() {
         setShowDialog(false);
     };
 
-    const handleDialogDelete = () => {
+    const handleDialogDelete = async () => {
         textToast(`Delete`);
-        console.log(dialogData);
         setDialogData(null);
         setShowDialog(false);
+
+        await axios.delete(`api/dataset/${dialogData.folder}/${dialogData.filename}`);
+        setClasses([]);
+        const dd = await refetch();
+        let classGroups = dd.data;
+        classGroups = classGroups.map((m) => ({
+            ...m,
+            count: m.data.length,
+        }));
+
+        // sync to local array
+        const temp = [];
+        for (const g of classGroups) {
+            if (temp.find((m) => m.id === g.id)) {
+                continue;
+            }
+            temp.push(g);
+        }
+        setClasses(temp);
     };
 
     function handleWindowSizeChange() {
@@ -305,6 +323,9 @@ function App() {
         status,
         data: dataset,
         error,
+        isFetching,
+        refetch,
+        remove,
     } = useQuery({
         queryKey: ["dataset"],
         queryFn: async () => {
@@ -325,7 +346,12 @@ function App() {
 
             return classGroups;
         },
+        // enabled: false,
     });
+
+    // useEffect(() => {
+    //     refetch();
+    // }, []);
 
     const mutation = useMutation({
         mutationFn: (newData) => {
@@ -380,7 +406,10 @@ function App() {
                                                         key={item.name}
                                                         onClick={() => {
                                                             setDialogData({
+                                                                classId: classGroup.id,
                                                                 ...item,
+                                                                folder: `${classGroup.id}_${classGroup.name}`,
+                                                                filename: `${item.name}${item.ext}`,
                                                                 url: getUrl(classGroup.id, classGroup.name, item.name, item.ext),
                                                             });
                                                             setShowDialog(true);
@@ -407,7 +436,7 @@ function App() {
                 <DialogTitle id="alert-dialog-title">{"Data"}</DialogTitle>
                 <DialogContent>
                     {dialogData == null ? null : <img srcSet={dialogData.url} src={dialogData.url} loading="lazy" />}
-                    <DialogContentText id="alert-dialog-description">Hi</DialogContentText>
+                    {/* <DialogContentText id="alert-dialog-description">Hi</DialogContentText> */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog} variant="outlined">

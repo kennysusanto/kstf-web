@@ -359,7 +359,7 @@ function App() {
                             </MenuItem>
                         ))}
                     </Select>
-                    <Grid container columns={12}>
+                    <Grid container columns={12} spacing={1}>
                         <Grid size={6}>
                             <div className="m-2" style={{ width: "100%" }}>
                                 <Camera
@@ -378,7 +378,7 @@ function App() {
                                 <canvas className="canvas2 d-none" />
                             </div>
 
-                            <ButtonGroup variant="outlined">
+                            <ButtonGroup variant="outlined" sx={{ width: "100%" }}>
                                 <Button
                                     hidden={numberOfCameras <= 1}
                                     onClick={() => {
@@ -404,7 +404,7 @@ function App() {
                         </Grid>
                         <Grid size={6}>
                             <div className="m-2">
-                                <img className="img1" />
+                                <img className="img1" width="100%" />
                                 {image != null ? (
                                     <Button
                                         onClick={() => {

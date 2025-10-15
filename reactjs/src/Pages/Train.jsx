@@ -41,6 +41,11 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -68,8 +73,27 @@ function App() {
     const [mobileNetBase, setMobileNetBase] = useState(undefined);
     const [trainingComplete, setTrainingComplete] = useState(false);
     const [modelName, setModelName] = useState("");
+    const [showDialog, setShowDialog] = useState(false);
+    const [dialogData, setDialogData] = useState(null);
+    const [models, setModels] = useState([]);
 
     const isMobile = browserWidth <= 768;
+
+    const handleCloseDialog = () => {
+        setDialogData(null);
+        setShowDialog(false);
+    };
+
+    const handleDialogDelete = async () => {
+        textToast(`Delete`);
+        setDialogData(null);
+        setShowDialog(false);
+
+        await axios.delete(`api/train/${dialogData.uid}`);
+        setModels([]);
+        const dd = await modelsQuery.refetch();
+        setModels(dd.data);
+    };
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
@@ -296,14 +320,15 @@ function App() {
         enabled: mobileNetBase !== undefined && trainingDataInputs.length === 0,
     });
 
-    const fetchModelsQuery = async () => {
-        const data = await axios.get(`/api/train`);
-        return data.data.data;
-    };
-
     const modelsQuery = useQuery({
         queryKey: ["models"],
-        queryFn: fetchModelsQuery,
+        queryFn: async () => {
+            const data = await axios.get(`/api/train`);
+
+            setModels(data.data.data);
+
+            return data.data.data;
+        },
     });
 
     const listStyle = {
@@ -398,9 +423,17 @@ function App() {
                             <List style={listStyle}>
                                 {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
                                 {modelsQuery.status === "success"
-                                    ? modelsQuery.data.map((m) => (
+                                    ? models.map((m) => (
                                           <>
-                                              <ListItemButton key={m.uid}>
+                                              <ListItemButton
+                                                  key={m.uid}
+                                                  onClick={() => {
+                                                      setDialogData({
+                                                          ...m,
+                                                      });
+                                                      setShowDialog(true);
+                                                  }}
+                                              >
                                                   <ListItemText primary={m.uid}></ListItemText>
                                               </ListItemButton>
                                               <Divider component="li" />
@@ -412,6 +445,24 @@ function App() {
                     </Grid>
                 </Grid>
             </Grid>
+            <Dialog open={showDialog} onClose={handleCloseDialog}>
+                <DialogTitle id="alert-dialog-title">{"Data"}</DialogTitle>
+                <DialogContent>
+                    {dialogData == null ? null : (
+                        <DialogContentText id="alert-dialog-description">
+                            You are viewing <b>{dialogData.uid}</b>
+                        </DialogContentText>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} variant="outlined">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleDialogDelete} autoFocus variant="contained" color="error">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <ToastContainer limit={5} />
         </Container>
     );

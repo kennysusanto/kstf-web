@@ -184,4 +184,12 @@ router.post("/rename", (req, res) => {
     });
 });
 
+router.delete("/:folder", (req, res) => {
+    let dir = `${dirname}/${req.params.folder}`;
+    fs.rmSync(dir, { recursive: true, force: true });
+    res.json({
+        data: "success",
+    });
+});
+
 export default router;
