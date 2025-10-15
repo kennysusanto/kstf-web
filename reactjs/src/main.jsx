@@ -8,6 +8,7 @@ import Splash from "./Splash.jsx";
 // import Menu from "./Menu.jsx";
 import Face from "./Face.jsx";
 import DatasetPage from "./Pages/Dataset.jsx";
+import DatasetIndexPage from "./Pages/DatasetIndex.jsx";
 import TrainPage from "./Pages/Train.jsx";
 import PredictPage from "./Pages/Predict.jsx";
 // import "bootstrap/dist/css/bootstrap.min.css";
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
     {
         path: "/Dataset",
         element: <DatasetPage />,
+    },
+    {
+        path: "/DatasetIndex",
+        element: <DatasetIndexPage />,
     },
     {
         path: "/Train",

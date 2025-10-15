@@ -40,6 +40,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
+import Divider from "@mui/material/Divider";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -305,6 +306,16 @@ function App() {
         queryFn: fetchModelsQuery,
     });
 
+    const listStyle = {
+        py: 0,
+        width: "100%",
+        maxWidth: 360,
+        borderRadius: 12,
+        border: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "background.paper",
+    };
+
     return (
         <Container className="container-training">
             <Grid container columns={12} spacing={2}>
@@ -363,6 +374,7 @@ function App() {
                                                     await trainAndPredict();
                                                 }, 500);
                                             }}
+                                            fullWidth
                                         >
                                             Train {modelName} on {dataset.length} classes
                                         </Button>
@@ -383,13 +395,16 @@ function App() {
                             <h3>Models</h3>
                         </Grid>
                         <Grid size={12}>
-                            <List>
+                            <List style={listStyle}>
                                 {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
                                 {modelsQuery.status === "success"
                                     ? modelsQuery.data.map((m) => (
-                                          <ListItemButton key={m.uid}>
-                                              <ListItemText primary={m.uid}></ListItemText>
-                                          </ListItemButton>
+                                          <>
+                                              <ListItemButton key={m.uid}>
+                                                  <ListItemText primary={m.uid}></ListItemText>
+                                              </ListItemButton>
+                                              <Divider component="li" />
+                                          </>
                                       ))
                                     : null}
                             </List>

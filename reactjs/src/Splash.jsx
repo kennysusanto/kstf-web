@@ -22,51 +22,75 @@ import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
+import Typography from "@mui/material/Typography";
+import CardActionArea from "@mui/material/CardActionArea";
 
 function App() {
     const [count, setCount] = useState(0);
     const [show, setShow] = useState(false);
     const { isLoggedIn, user, login, logout } = useContext(AuthContext);
+    const cards = [
+        {
+            href: "/Face",
+            title: "Quick Demo",
+            text: "Experience a simple setup for face recognition",
+        },
+        {
+            href: "/Dataset",
+            title: "Capture Dataset",
+            text: "Setup faces to train the model",
+        },
+        {
+            href: "/DatasetIndex",
+            title: "View Dataset",
+            text: "Manage captured dataset",
+        },
+        {
+            href: "/Train",
+            title: "Train",
+            text: "Create your model",
+        },
+        {
+            href: "/Predict",
+            title: "Predict",
+            text: "Run prediction with trained models",
+        },
+        {
+            href: "/",
+            title: "Dashboard",
+            text: "View reports",
+        },
+    ];
 
     return (
         <>
-            <Grid container columns={12} spacing={2}>
-                <Grid size={12}>
-                    <Button variant="contained" href="/Face">
-                        Quick Demo
-                    </Button>
-                </Grid>
-                <Grid size={12}>
-                    <Button variant="contained" href="/Dataset">
-                        Dataset
-                    </Button>
-                </Grid>
-                <Grid size={12}>
-                    <Button variant="contained" href="/Train">
-                        Train
-                    </Button>
-                </Grid>
-                <Grid size={12}>
-                    <Button variant="contained" href="/Predict">
-                        Predict
-                    </Button>
-                </Grid>
-                <Grid size={12}>
-                    <Button variant="contained" href="/">
-                        Dashboard
-                    </Button>
-                </Grid>
+            <Box sx={{ display: "grid", gap: 2 }}>
+                {cards.map((card, index) => (
+                    <Card>
+                        <CardActionArea href={card.href}>
+                            <CardContent>
+                                <Typography gutterBottom variant="h5" component="div">
+                                    {card.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                    {card.text}
+                                </Typography>
+                            </CardContent>
+                        </CardActionArea>
+                    </Card>
+                ))}
                 <div>
                     <ConfirmLogoutModal props={{ show, setShow, logout }} />
                     {isLoggedIn ? (
-                        <div className="d-grid">
-                            <Button variant="outlined" color="error" onClick={() => setShow(true)}>
-                                Logout
-                            </Button>
-                        </div>
+                        <Button variant="outlined" color="error" onClick={() => setShow(true)} fullWidth>
+                            Logout
+                        </Button>
                     ) : null}
                 </div>
-            </Grid>
+            </Box>
             <ul>
                 {/* <li>
                     <a href="/App">App</a>

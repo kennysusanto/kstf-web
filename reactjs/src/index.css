@@ -6,7 +6,7 @@
 }
 
 html, body, #root {
-  background-color: rgba(246, 247, 248, 0.5) !important;
+  background-color: rgb(233, 233, 233) !important;
 }
 
 /* :root {

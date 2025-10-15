@@ -34,6 +34,14 @@ import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import ButtonGroup from "@mui/material/ButtonGroup";
+import ImageList from "@mui/material/ImageList";
+import ImageListItem from "@mui/material/ImageListItem";
+import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -69,8 +77,22 @@ function App() {
     const [classesTensorLabels, setClassesTensorLabels] = useState([]);
     const [highestDataCount, setHighestDataCount] = useState(0);
     const [dataChanged, setDataChanged] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
+    const [dialogData, setDialogData] = useState(null);
 
     const isMobile = browserWidth <= 768;
+
+    const handleCloseDialog = () => {
+        setDialogData(null);
+        setShowDialog(false);
+    };
+
+    const handleDialogDelete = () => {
+        textToast(`Delete`);
+        console.log(dialogData);
+        setDialogData(null);
+        setShowDialog(false);
+    };
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
@@ -319,6 +341,15 @@ function App() {
         setDataChanged(false);
     };
 
+    const getUrl = (classId, className, fileName, ext) => {
+        const apiVersion = "v1";
+        const resourceId = "item-456";
+        const endpoint = `/api/dataset/${classId}_${className}/${fileName}${ext}`;
+        const fullUrl = `${window.location.origin}${endpoint}`;
+        // console.log(fullUrl);
+        return fullUrl;
+    };
+
     return (
         <Container className="container-dataset">
             <Grid container columns={12} spacing={2}>
@@ -327,151 +358,66 @@ function App() {
                         Back
                     </Button>
                 </Grid>
-                <Grid size={{ sm: 12, md: 6 }}>
-                    {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
-                    <Select
-                        onChange={(event) => {
-                            setActiveDeviceId(event.target.value);
-                        }}
-                        value={activeDeviceId}
-                        fullWidth
-                    >
-                        {devices.map((d) => (
-                            <MenuItem key={d.deviceId} value={d.deviceId}>
-                                {d.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    <Grid container columns={12}>
-                        <Grid size={6}>
-                            <div className="m-2" style={{ width: "100%" }}>
-                                <Camera
-                                    ref={camera}
-                                    numberOfCamerasCallback={(val) => {
-                                        textToast("Check your camera");
-                                        setNumberOfCameras(val);
-                                    }}
-                                    aspectRatio={isMobile ? 3 / 4 : 4 / 3}
-                                    videoSourceDeviceId={activeDeviceId}
-                                    videoReadyCallback={async () => {
-                                        console.log("Video feed ready.");
-                                    }}
-                                />
-                                <canvas className="canvas1 d-none" />
-                                <canvas className="canvas2 d-none" />
-                            </div>
 
-                            <ButtonGroup variant="outlined">
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        camera.current.switchCamera();
-                                    }}
-                                >
-                                    Flip Camera
-                                </Button>
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        setCapturing(!capturing);
-                                        capturingRef.current = !capturing;
-                                    }}
-                                >
-                                    {capturing ? "Stop Track" : "Track Face"}
-                                </Button>
-                            </ButtonGroup>
-                        </Grid>
-                        <Grid size={6}>
-                            <div className="m-2">
-                                <img className="img1" />
-                                {image != null ? (
-                                    <Button
-                                        onClick={() => {
-                                            clearPreview();
-                                        }}
-                                        variant="contained"
-                                    >
-                                        Clear
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </Grid>
-                    </Grid>
-                </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
                     <Grid container spacing={1} columns={12}>
                         <Grid size={12}>
                             <h3>Classes</h3>
                         </Grid>
                         <Grid size={12}>
-                            <TextField
-                                className="form-control classname-input"
-                                value={className}
-                                onChange={(e) => setClassName(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.code == "Enter") {
-                                        inputClass();
-                                    }
-                                }}
-                                variant="filled"
-                                label="Class name"
-                                fullWidth
-                            />
-                        </Grid>
-                        <Grid size={12}>
-                            <Button onClick={inputClass} disabled={status !== "success"} variant="contained" color="success" fullWidth>
-                                Add
-                            </Button>
-                        </Grid>
-                        <Grid size={12}>
-                            <Grid container spacing={2}>
-                                {classes.map((c) => (
-                                    <Grid>
-                                        <Button
-                                            key={c.id}
-                                            size="lg"
-                                            onMouseDown={async () => {
-                                                await captureImage(c);
-                                            }}
-                                            variant="contained"
-                                        >
-                                            {c.name} ({c.count})
-                                        </Button>
+                            <Grid container spacing={1}>
+                                {classes.map((classGroup) => (
+                                    <Grid container columns={12}>
+                                        <Grid size={12}>
+                                            <Typography key={classGroup.id} variant="h7">
+                                                {classGroup.name} ({classGroup.count})
+                                            </Typography>
+                                        </Grid>
+                                        <Grid size={12}>
+                                            <ImageList sx={{ maxHeight: "200px" }} cols={4} rowHeight={80}>
+                                                {classGroup.data.map((item) => (
+                                                    <ImageListItem
+                                                        key={item.name}
+                                                        onClick={() => {
+                                                            setDialogData({
+                                                                ...item,
+                                                                url: getUrl(classGroup.id, classGroup.name, item.name, item.ext),
+                                                            });
+                                                            setShowDialog(true);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            srcSet={getUrl(classGroup.id, classGroup.name, item.name, item.ext)}
+                                                            src={getUrl(classGroup.id, classGroup.name, item.name, item.ext)}
+                                                            alt={item.name}
+                                                            loading="lazy"
+                                                        />
+                                                    </ImageListItem>
+                                                ))}
+                                            </ImageList>
+                                        </Grid>
                                     </Grid>
                                 ))}
                             </Grid>
                         </Grid>
-                        <Grid size={12}>
-                            {mutation.isPending ? (
-                                "Saving..."
-                            ) : (
-                                <>
-                                    <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged}>
-                                        Save
-                                    </Button>
-                                    {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
-                                    {mutation.isSuccess ? <span>Save success!</span> : null}
-                                </>
-                            )}
-                        </Grid>
-                        <Grid size={12}>
-                            <h4>Data from server</h4>
-                            {status === "pending" ? <span>Loading...</span> : null}
-                            {status === "success" ? (
-                                <Grid container spacing={2}>
-                                    {dataset.map((d) => (
-                                        <Grid>
-                                            <Button key={d.id} variant="outlined" disabled>
-                                                {d.name} ({d.count})
-                                            </Button>
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            ) : null}
-                        </Grid>
                     </Grid>
                 </Grid>
             </Grid>
+            <Dialog open={showDialog} onClose={handleCloseDialog}>
+                <DialogTitle id="alert-dialog-title">{"Data"}</DialogTitle>
+                <DialogContent>
+                    {dialogData == null ? null : <img srcSet={dialogData.url} src={dialogData.url} loading="lazy" />}
+                    <DialogContentText id="alert-dialog-description">Hi</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} variant="outlined">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleDialogDelete} autoFocus variant="contained" color="error">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <ToastContainer limit={5} />
         </Container>
     );

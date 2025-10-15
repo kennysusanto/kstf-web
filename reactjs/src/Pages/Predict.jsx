@@ -40,6 +40,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
+import Divider from "@mui/material/Divider";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -324,12 +325,24 @@ function App() {
         // enabled: mobileNetBase !== undefined && useModel !== undefined,
     });
 
+    const listStyle = {
+        py: 0,
+        width: "100%",
+        maxWidth: 360,
+        borderRadius: 12,
+        border: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "background.paper",
+    };
+
     return (
         <Container className="container-dataset">
             <Grid container columns={12} spacing={2}>
-                <Button variant="contained" href="/">
-                    Back
-                </Button>
+                <Grid size={12}>
+                    <Button variant="contained" href="/">
+                        Back
+                    </Button>
+                </Grid>
 
                 <Grid size={{ sm: 12, md: 6 }}>
                     {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
@@ -351,7 +364,10 @@ function App() {
                             <div className="m-2" style={{ width: "100%" }}>
                                 <Camera
                                     ref={camera}
-                                    numberOfCamerasCallback={setNumberOfCameras}
+                                    numberOfCamerasCallback={(val) => {
+                                        textToast("Check your camera");
+                                        setNumberOfCameras(val);
+                                    }}
                                     aspectRatio={isMobile ? 3 / 4 : 4 / 3}
                                     videoSourceDeviceId={activeDeviceId}
                                     videoReadyCallback={async () => {
@@ -410,22 +426,25 @@ function App() {
                 </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
                     <h3>Models</h3>
-                    <List>
+                    <List style={listStyle}>
                         {status === "pending" ? <span>Loading...</span> : null}
                         {status === "success"
                             ? models.map((m) => (
-                                  <ListItemButton
-                                      key={m.uid}
-                                      onClick={() => {
-                                          setModelValue(m.uid);
-                                          setCapturing(false);
-                                          capturingRef.current = false;
-                                          scrollToBottom();
-                                      }}
-                                      selected={modelValue == m.uid}
-                                  >
-                                      <ListItemText primary={m.uid}></ListItemText>
-                                  </ListItemButton>
+                                  <>
+                                      <ListItemButton
+                                          key={m.uid}
+                                          onClick={() => {
+                                              setModelValue(m.uid);
+                                              setCapturing(false);
+                                              capturingRef.current = false;
+                                              scrollToBottom();
+                                          }}
+                                          selected={modelValue == m.uid}
+                                      >
+                                          <ListItemText primary={m.uid}></ListItemText>
+                                      </ListItemButton>
+                                      <Divider component="li" />
+                                  </>
                               ))
                             : null}
                     </List>

@@ -13,7 +13,7 @@
     height: calc(.75 * 30vw);
 } */
 
-@media (width < 768px) {
+/* @media (width < 768px) {
     .container-dataset .img1 {
         left: 10px;
         top: 10px;
@@ -24,5 +24,5 @@
         height: calc((4/3) * 80vw);
     }
     
-}
+} */
 
