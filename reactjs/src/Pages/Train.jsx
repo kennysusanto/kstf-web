@@ -49,6 +49,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import Typography from "@mui/material/Typography";
 
 let nextId = 0;
 
@@ -76,6 +77,7 @@ function App() {
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
     const [models, setModels] = useState([]);
+    const [epoch, setEpoch] = useState(5);
 
     const isMobile = browserWidth <= 768;
 
@@ -171,10 +173,18 @@ function App() {
             }
 
             // images.push({ id: cc.id, name: cc.name, data });
-            trainingDataInputs.push(imageTensor);
-            trainingDataOutputs.push(classGroup.id);
-            classesTensors.push(imageTensor);
-            classesTensorLabels.push(classGroup.id);
+            let temp = trainingDataInputs;
+            temp.push(imageTensor);
+            setTrainingDataInputs(temp);
+            temp = trainingDataOutputs;
+            temp.push(classGroup.id);
+            setTrainingDataOutputs(temp);
+            temp = classesTensors;
+            temp.push(imageTensor);
+            setClassesTensors(temp);
+            temp = classesTensorLabels;
+            temp.push(classGroup.id);
+            setClassesTensorLabels(temp);
             // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
             let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
             if (dataCount > highestDataCount) {
@@ -193,6 +203,8 @@ function App() {
 
     const loadMobileNetFeatureModel = async () => {
         const URL = "https://storage.googleapis.com/jmstore/TensorFlowJS/EdX/SavedModels/mobilenet-v2/model.json";
+        // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
+        // const URL = `${domain}/api/public/model.json`;
         mobilenet = await tf.loadLayersModel(URL);
         // STATUS.innerText = "MobileNet v2 loaded successfully!";
         // mobilenet.summary(null, null, (line) => {
@@ -241,7 +253,7 @@ function App() {
         let results = await model.fit(inputsAsTensor, oneHotOutputs, {
             shuffle: true,
             batchSize: 5,
-            epochs: 5,
+            epochs: epoch,
             callbacks: { onEpochEnd: logProgress },
         });
 
@@ -344,14 +356,16 @@ function App() {
     return (
         <Container className="container-training">
             <Grid container columns={12} spacing={2}>
-                <Button variant="contained" href="/">
-                    Back
-                </Button>
+                <Grid size={12}>
+                    <Button variant="contained" href="/">
+                        Back
+                    </Button>
+                </Grid>
 
                 <Grid size={{ sm: 12, md: 6 }}>
                     <Grid container spacing={2} columns={12}>
                         <Grid size={12}>
-                            <h3>Classes</h3>
+                            <Typography variant="h5">Classes</Typography>
                         </Grid>
                         <Grid size={12}>
                             <div>
@@ -372,6 +386,16 @@ function App() {
                         <Grid size={12}>
                             {dataset !== undefined ? (
                                 <Grid container columns={12} spacing={2}>
+                                    <Grid size={12}>
+                                        <TextField
+                                            value={epoch}
+                                            label="Epoch"
+                                            onChange={(e) => setEpoch(e.target.value)}
+                                            type="number"
+                                            variant="filled"
+                                            fullWidth
+                                        />
+                                    </Grid>
                                     <Grid size={12}>
                                         <TextField
                                             value={modelName}
@@ -404,20 +428,11 @@ function App() {
                                             Train {modelName} on {dataset.length} classes
                                         </Button>
                                     </Grid>
-                                    <Grid size={12}>
-                                        <span>Highest data count: {highestDataCount}</span>
-                                    </Grid>
-                                    <Grid size={12}>
-                                        <span>
-                                            All class length the same as highest data count:{" "}
-                                            {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
-                                        </span>
-                                    </Grid>
                                 </Grid>
                             ) : null}
                         </Grid>
                         <Grid size={12}>
-                            <h3>Models</h3>
+                            <Typography variant="h5">Models</Typography>
                         </Grid>
                         <Grid size={12}>
                             <List style={listStyle}>

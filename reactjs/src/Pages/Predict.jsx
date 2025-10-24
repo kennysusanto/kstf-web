@@ -41,11 +41,14 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import Divider from "@mui/material/Divider";
+import Typography from "@mui/material/Typography";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import Checkbox from "@mui/material/Checkbox";
 
 let nextId = 0;
+let tm = null;
 
 function App() {
     const camera = useRef(null);
@@ -80,6 +83,11 @@ function App() {
     const [predictRes, setPredictRes] = useState(undefined);
     const [modelValue, setModelValue] = useState("");
     const [useModel, setUseModel] = useState(undefined);
+    const [actionURL, setActionURL] = useState("/api/prediction");
+    const [predictTimeout, setPredictTimeout] = useState(5);
+    const [confidenceThres, setConfidenceThres] = useState(90.0);
+    const [isTimeout, setIsTimeout] = useState(false);
+    const [sendReport, setSendReport] = useState(false);
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
@@ -189,11 +197,35 @@ function App() {
                             // console.log(highestIndex, ms);
                             if (classes !== undefined) {
                                 // console.log(classes[highestIndex].name, ms);
-                                setPredictRes({
-                                    name: classes[highestIndex].name,
-                                    confidence: Math.floor(predictionArray[highestIndex] * 100),
-                                    spent: ms,
-                                });
+                                const confidence = Math.floor(predictionArray[highestIndex] * 100);
+                                const name = classes[highestIndex].name;
+                                if (confidence >= confidenceThres) {
+                                    setPredictRes({
+                                        name: name,
+                                        confidence: confidence,
+                                        spent: ms,
+                                    });
+
+                                    setIsTimeout(true);
+                                    setCapturing(!capturing);
+                                    capturingRef.current = !capturingRef.current;
+                                    // console.log("timeout", predictTimeout * 1000);
+                                    if (sendReport) {
+                                        axios.post("/api/prediction", {
+                                            classname: name,
+                                            confidence: confidence,
+                                        });
+                                    }
+                                    tm = setTimeout(() => {
+                                        setIsTimeout(false);
+                                        setCapturing(!capturing);
+                                        capturingRef.current = !capturingRef.current;
+                                        detectFaceLoop();
+                                    }, predictTimeout * 1000);
+                                    return;
+                                } else {
+                                    console.log("Confidence too low", confidence);
+                                }
                             }
                         });
                     } else {
@@ -204,7 +236,7 @@ function App() {
 
             requestAnimationFrame(detectFaceLoop);
         } else {
-            clearPreview();
+            //clearPreview();
         }
     };
 
@@ -304,7 +336,7 @@ function App() {
 
             setCapturing(!capturing);
             capturingRef.current = !capturing;
-            scrollToBottom();
+            //scrollToBottom();
         })();
         // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.json
         // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.weights.bin
@@ -344,7 +376,7 @@ function App() {
                     </Button>
                 </Grid>
 
-                <Grid size={{ sm: 12, md: 6 }}>
+                <Grid size={{ sm: 12, md: 6 }} style={{ width: "100%" }}>
                     {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
                     <Select
                         onChange={(event) => {
@@ -387,19 +419,19 @@ function App() {
                                 >
                                     Flip Camera
                                 </Button>
-                                <Button
+                                {/* <Button
                                     hidden={numberOfCameras <= 1}
                                     onClick={() => {
                                         setCapturing(!capturing);
                                         capturingRef.current = !capturing;
-                                        scrollToBottom();
+                                        //scrollToBottom();
                                         if (capturing) {
                                             setModelValue("");
                                         }
                                     }}
                                 >
                                     {capturing ? "Stop Track" : "Track Face"}
-                                </Button>
+                                </Button> */}
                             </ButtonGroup>
                         </Grid>
                         <Grid size={6}>
@@ -415,17 +447,18 @@ function App() {
                                         Clear
                                     </Button>
                                 ) : null}
-                                {predictRes === undefined || !capturing ? null : (
+                                {predictRes === undefined ? null : (
                                     <p className="mt-2">
                                         Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
                                     </p>
                                 )}
+                                {isTimeout ? <p className="mt-2">Please wait</p> : null}
                             </div>
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
-                    <h3>Models</h3>
+                    <Typography variant="h5">Models</Typography>
                     <List style={listStyle}>
                         {status === "pending" ? <span>Loading...</span> : null}
                         {status === "success"
@@ -434,10 +467,20 @@ function App() {
                                       <ListItemButton
                                           key={m.uid}
                                           onClick={() => {
-                                              setModelValue(m.uid);
-                                              setCapturing(false);
-                                              capturingRef.current = false;
-                                              scrollToBottom();
+                                              if (modelValue == m.uid) {
+                                                  setModelValue("");
+                                                  setCapturing(false);
+                                                  capturingRef.current = false;
+                                                  clearPreview();
+                                                  clearTimeout(tm);
+                                                  setPredictRes(undefined);
+                                                  setIsTimeout(false);
+                                              } else {
+                                                  setModelValue(m.uid);
+                                                  setCapturing(false);
+                                                  capturingRef.current = false;
+                                                  //scrollToBottom();
+                                              }
                                           }}
                                           selected={modelValue == m.uid}
                                       >
@@ -448,6 +491,43 @@ function App() {
                               ))
                             : null}
                     </List>
+                </Grid>
+                <Grid size={{ sm: 12 }}>
+                    <Grid container columns={12} spacing={2}>
+                        <Grid size={12}>
+                            <Typography variant="h5">Settings</Typography>
+                        </Grid>
+                        <Grid size={10}>
+                            <TextField value={actionURL} onChange={(e) => setActionURL(e.target.value)} label="URL" fullWidth />
+                        </Grid>
+                        <Grid size={2}>
+                            <Checkbox
+                                checked={sendReport}
+                                onChange={(e) => {
+                                    setSendReport(!sendReport);
+                                }}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid size={6}>
+                            <TextField
+                                value={predictTimeout}
+                                onChange={(e) => setPredictTimeout(e.target.value)}
+                                type="number"
+                                label="Timeout"
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid size={6}>
+                            <TextField
+                                value={confidenceThres}
+                                onChange={(e) => setConfidenceThres(e.target.value)}
+                                type="number"
+                                label="Confidence Threshold"
+                                fullWidth
+                            />
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Grid>
             <ToastContainer limit={5} />

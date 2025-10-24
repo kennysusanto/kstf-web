@@ -2,6 +2,7 @@ import express from "express";
 import fs from "fs";
 import { uuidv4, readFilesSync, readFilesSync2 } from "../helpers/misc.js";
 import path from "path";
+import db from "../persistence/index.js";
 
 const router = express.Router();
 
@@ -18,9 +19,14 @@ router.get("/about", (req, res) => {
     res.json({ message: "About auth" });
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
     let correct1 = req.body.username === "admin";
     let correct2 = req.body.password === "admin";
+
+    let users = await db.getUsers();
+    let user = users.find((m) => m.username === req.body.username);
+    correct1 = user != null;
+    correct2 = user != null && user.password === req.body.password;
 
     let returnObj = {
         message: "User not found",

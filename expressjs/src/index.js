@@ -6,6 +6,7 @@ import birdsRouter from "./routers/birds.js";
 import datasetRouter from "./routers/dataset.js";
 import trainRouter from "./routers/train.js";
 import authRouter from "./routers/auth.js";
+import predictionRouter from "./routers/prediction.js";
 import moment from "moment";
 import path from "path";
 import http from "http";
@@ -36,6 +37,7 @@ app.use(bodyParser.json({ limit: "4mb" }));
 app.use(methodOverride());
 
 app.use(express.static("./static"));
+app.use("/api/public", express.static("./src/public"));
 app.use("/api/dataset", express.static("./src/public/dataset"));
 app.use("/api/model", express.static("./src/public/model"));
 
@@ -53,6 +55,7 @@ app.use("/api/birds", birdsRouter);
 app.use("/api/dataset", datasetRouter);
 app.use("/api/train", trainRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/prediction", predictionRouter);
 app.get("/api/version", (req, res) => {
     res.send("1.1.1");
 });

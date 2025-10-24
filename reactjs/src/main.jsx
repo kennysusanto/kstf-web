@@ -11,6 +11,7 @@ import DatasetPage from "./Pages/Dataset.jsx";
 import DatasetIndexPage from "./Pages/DatasetIndex.jsx";
 import TrainPage from "./Pages/Train.jsx";
 import PredictPage from "./Pages/Predict.jsx";
+import DashboardPage from "./Pages/Dashboard.jsx";
 // import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthProvider, AuthContext } from "./AuthContext.jsx";
 import LoginPage from "./Pages/Login.jsx";
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
     {
         path: "/Predict",
         element: <PredictPage />,
+    },
+    {
+        path: "/Dashboard",
+        element: <DashboardPage />,
     },
 ]);
 

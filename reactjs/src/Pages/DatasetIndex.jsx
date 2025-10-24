@@ -388,7 +388,7 @@ function App() {
                 <Grid size={{ sm: 12, md: 6 }}>
                     <Grid container spacing={1} columns={12}>
                         <Grid size={12}>
-                            <h3>Classes</h3>
+                            <Typography variant="h5">Classes</Typography>
                         </Grid>
                         <Grid size={12}>
                             <Grid container spacing={1}>

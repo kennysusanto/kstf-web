@@ -13,7 +13,7 @@ const {
     MYSQL_DB_FILE: DB_FILE,
 } = process.env;
 
-let pool;
+var pool;
 
 async function init() {
     const host = HOST_FILE ? fs.readFileSync(HOST_FILE) : HOST;
@@ -37,14 +37,79 @@ async function init() {
         charset: "utf8mb4",
     });
 
-    return new Promise((acc, rej) => {
-        pool.query("CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean) DEFAULT CHARSET utf8mb4", (err) => {
-            if (err) return rej(err);
+    return Promise.all([
+        new Promise((acc, rej) => {
+            pool.query(
+                "CREATE TABLE IF NOT EXISTS organization (id int not null auto_increment, orgname varchar(255), active boolean, createdat datetime, updatedat datetime, deletedat datetime, PRIMARY KEY(id), CONSTRAINT uc_user_2nd UNIQUE (orgname)) DEFAULT CHARSET utf8mb4",
+                (err) => {
+                    if (err) return rej(err);
 
-            console.log(`Connected to mysql db at host ${HOST}`);
-            acc();
-        });
-    });
+                    // console.log(`Connected to mysql db at host ${HOST}`);
+                    acc();
+                }
+            );
+        }),
+        new Promise((acc, rej) => {
+            pool.query(
+                "CREATE TABLE IF NOT EXISTS user (id int not null auto_increment, username varchar(255), password varchar(255), orgid varchar(36), active boolean, createdat datetime, updatedat datetime, deletedat datetime, PRIMARY KEY(id), CONSTRAINT uc_user_2nd UNIQUE (username)) DEFAULT CHARSET utf8mb4",
+                (err) => {
+                    if (err) return rej(err);
+
+                    // console.log(`Connected to mysql db at host ${HOST}`);
+                    acc();
+                }
+            );
+        }),
+        new Promise((acc, rej) => {
+            pool.query(
+                "CREATE TABLE IF NOT EXISTS prediction (id int not null auto_increment, classname varchar(255), confidence float, createdat datetime, updatedat datetime, deletedat datetime, PRIMARY KEY(id)) DEFAULT CHARSET utf8mb4",
+                (err) => {
+                    if (err) return rej(err);
+
+                    // console.log(`Connected to mysql db at host ${HOST}`);
+                    acc();
+                }
+            );
+        }),
+        new Promise((acc, rej) => {
+            pool.query(
+                `INSERT INTO organization (orgname, active, createdat)
+                SELECT 'master', 1, NOW()
+                WHERE NOT EXISTS (SELECT 1 FROM organization WHERE orgname = 'master');`,
+                (err) => {
+                    if (err) return rej(err);
+
+                    // console.log(`Connected to mysql db at host ${HOST}`);
+                    acc();
+                }
+            );
+        }),
+        new Promise((acc, rej) => {
+            pool.query(
+                `INSERT INTO user (username, password, orgid, active, createdat)
+                SELECT 'sa', 'abc', (SELECT id FROM organization WHERE orgname = 'master'), 1, NOW()
+                WHERE NOT EXISTS (SELECT 1 FROM user WHERE username = 'sa');`,
+                (err) => {
+                    if (err) return rej(err);
+
+                    // console.log(`Connected to mysql db at host ${HOST}`);
+                    acc();
+                }
+            );
+        }),
+    ]);
+
+    // return new Promise((acc, rej) => {
+    //     pool.query(
+    //         "CREATE TABLE IF NOT EXISTS user (id varchar(36), username varchar(255), active boolean, createdat datetime, updatedat datetime, deletedat datetime) DEFAULT CHARSET utf8mb4",
+    //         (err) => {
+    //             if (err) return rej(err);
+
+    //             console.log(`Connected to mysql db at host ${HOST}`);
+    //             acc();
+    //         }
+    //     );
+    // });
 }
 
 async function teardown() {
@@ -56,14 +121,16 @@ async function teardown() {
     });
 }
 
-async function getItems() {
+// organization
+
+async function getOrganizations() {
     return new Promise((acc, rej) => {
-        pool.query("SELECT * FROM todo_items", (err, rows) => {
+        pool.query("SELECT * FROM organization", (err, rows) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
                     Object.assign({}, item, {
-                        completed: item.completed === 1,
+                        active: item.active === 1,
                     })
                 )
             );
@@ -71,14 +138,14 @@ async function getItems() {
     });
 }
 
-async function getItem(id) {
+async function getOrganization(id) {
     return new Promise((acc, rej) => {
-        pool.query("SELECT * FROM todo_items WHERE id=?", [id], (err, rows) => {
+        pool.query("SELECT * FROM organization WHERE id=?", [id], (err, rows) => {
             if (err) return rej(err);
             acc(
                 rows.map((item) =>
                     Object.assign({}, item, {
-                        completed: item.completed === 1,
+                        active: item.active === 1,
                     })
                 )[0]
             );
@@ -86,27 +153,157 @@ async function getItem(id) {
     });
 }
 
-async function storeItem(item) {
+async function storeOrganization(item) {
     return new Promise((acc, rej) => {
-        pool.query("INSERT INTO todo_items (id, name, completed) VALUES (?, ?, ?)", [item.id, item.name, item.completed ? 1 : 0], (err) => {
+        pool.query(
+            "INSERT INTO organization (id, orgname, active, createdat) VALUES (?, ?, ?, now())",
+            [item.id, item.orgname, item.active ? 1 : 0],
+            (err) => {
+                if (err) return rej(err);
+                acc();
+            }
+        );
+    });
+}
+
+async function updateOrganization(id, item) {
+    return new Promise((acc, rej) => {
+        pool.query("UPDATE organization SET orgname=?, active=? WHERE id=?", [item.orgname, item.active ? 1 : 0, id], (err) => {
             if (err) return rej(err);
             acc();
         });
     });
 }
 
-async function updateItem(id, item) {
+async function removeOrganization(id) {
     return new Promise((acc, rej) => {
-        pool.query("UPDATE todo_items SET name=?, completed=? WHERE id=?", [item.name, item.completed ? 1 : 0, id], (err) => {
+        pool.query("DELETE FROM organization WHERE id = ?", [id], (err) => {
             if (err) return rej(err);
             acc();
         });
     });
 }
 
-async function removeItem(id) {
+// user
+
+async function getUsers() {
     return new Promise((acc, rej) => {
-        pool.query("DELETE FROM todo_items WHERE id = ?", [id], (err) => {
+        pool.query("SELECT * FROM user", (err, rows) => {
+            if (err) return rej(err);
+            acc(
+                rows.map((item) =>
+                    Object.assign({}, item, {
+                        active: item.active === 1,
+                    })
+                )
+            );
+        });
+    });
+}
+
+async function getUser(id) {
+    return new Promise((acc, rej) => {
+        pool.query("SELECT * FROM user WHERE id=?", [id], (err, rows) => {
+            if (err) return rej(err);
+            acc(
+                rows.map((item) =>
+                    Object.assign({}, item, {
+                        active: item.active === 1,
+                    })
+                )[0]
+            );
+        });
+    });
+}
+
+async function storeUser(item) {
+    return new Promise((acc, rej) => {
+        pool.query(
+            "INSERT INTO user (id, username, password, orgid, active, createdat) VALUES (?, ?, ?, ?, ?, now())",
+            [item.id, item.username, item.password, item.orgid, item.active ? 1 : 0],
+            (err) => {
+                if (err) return rej(err);
+                acc();
+            }
+        );
+    });
+}
+
+async function updateUser(id, item) {
+    return new Promise((acc, rej) => {
+        pool.query("UPDATE user SET username=?, password=?, active=? WHERE id=?", [item.username, item.password, item.active ? 1 : 0, id], (err) => {
+            if (err) return rej(err);
+            acc();
+        });
+    });
+}
+
+async function removeUser(id) {
+    return new Promise((acc, rej) => {
+        pool.query("DELETE FROM user WHERE id = ?", [id], (err) => {
+            if (err) return rej(err);
+            acc();
+        });
+    });
+}
+
+// prediction
+
+async function getPredictions() {
+    return new Promise((acc, rej) => {
+        pool.query("SELECT * FROM prediction order by createdat desc", (err, rows) => {
+            if (err) return rej(err);
+            acc(
+                rows.map((item) =>
+                    Object.assign({}, item, {
+                        active: item.active === 1,
+                    })
+                )
+            );
+        });
+    });
+}
+
+async function getPrediction(id) {
+    return new Promise((acc, rej) => {
+        pool.query("SELECT * FROM prediction WHERE id=?", [id], (err, rows) => {
+            if (err) return rej(err);
+            acc(
+                rows.map((item) =>
+                    Object.assign({}, item, {
+                        active: item.active === 1,
+                    })
+                )[0]
+            );
+        });
+    });
+}
+
+async function storePrediction(item) {
+    return new Promise((acc, rej) => {
+        pool.query(
+            "INSERT INTO prediction (id, classname, confidence, createdat) VALUES (?, ?, ?, now())",
+            [item.id, item.classname, item.confidence],
+            (err) => {
+                if (err) return rej(err);
+                acc();
+            }
+        );
+    });
+}
+
+async function updatePrediction(id, item) {
+    return new Promise((acc, rej) => {
+        pool.query("UPDATE prediction SET classname=?, WHERE id=?", [item.classname, id], (err) => {
+            if (err) return rej(err);
+            acc();
+        });
+    });
+}
+
+async function removePrediction(id) {
+    return new Promise((acc, rej) => {
+        pool.query("DELETE FROM prediction WHERE id = ?", [id], (err) => {
             if (err) return rej(err);
             acc();
         });
@@ -116,9 +313,19 @@ async function removeItem(id) {
 export default {
     init,
     teardown,
-    getItems,
-    getItem,
-    storeItem,
-    updateItem,
-    removeItem,
+    getOrganizations,
+    getOrganization,
+    storeOrganization,
+    updateOrganization,
+    removeOrganization,
+    getUsers,
+    getUser,
+    storeUser,
+    updateUser,
+    removeUser,
+    getPredictions,
+    getPrediction,
+    storePrediction,
+    updatePrediction,
+    removePrediction,
 };

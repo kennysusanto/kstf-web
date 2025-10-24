@@ -59,7 +59,7 @@ function App() {
             text: "Run prediction with trained models",
         },
         {
-            href: "/",
+            href: "/Dashboard",
             title: "Dashboard",
             text: "View reports",
         },
