@@ -17,7 +17,7 @@ WORKDIR /usr/local/kstf-web
 ###################################################
 FROM base AS client-base
 COPY reactjs/package.json reactjs/package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm cache clean --force && npm ci --legacy-peer-deps
 COPY reactjs/index.html reactjs/vite.config.js ./
 COPY reactjs/public ./public
 COPY reactjs/src ./src
