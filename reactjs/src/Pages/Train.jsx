@@ -176,17 +176,25 @@ function App() {
             let temp = trainingDataInputs;
             temp.push(imageTensor);
             setTrainingDataInputs(temp);
+            // console.log("trainingDataInputs", temp);
+
             temp = trainingDataOutputs;
             temp.push(classGroup.id);
             setTrainingDataOutputs(temp);
-            temp = classesTensors;
-            temp.push(imageTensor);
-            setClassesTensors(temp);
-            temp = classesTensorLabels;
-            temp.push(classGroup.id);
-            setClassesTensorLabels(temp);
+            // console.log("trainingDataOutputs", temp);
+
+            // temp = classesTensors;
+            // temp.push(imageTensor);
+            // setClassesTensors(temp);
+            // console.log("classesTensors", temp);
+
+            // let tempctl = classesTensorLabels;
+            // tempctl.push(classGroup.id);
+            // setClassesTensorLabels(tempctl);
+            // console.log("classesTensorLabels", tempctl);
+
             // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
-            let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
+            let dataCount = temp.filter((m) => m == classGroup.id).length;
             if (dataCount > highestDataCount) {
                 setHighestDataCount(dataCount);
             }
@@ -249,7 +257,6 @@ function App() {
         let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
         let oneHotOutputs = tf.oneHot(outputsAsTensor, dataset.length);
         let inputsAsTensor = tf.stack(trainingDataInputs);
-
         let results = await model.fit(inputsAsTensor, oneHotOutputs, {
             shuffle: true,
             batchSize: 5,
@@ -281,7 +288,7 @@ function App() {
         let newName = modelName;
         for (const r of resp.responses) {
             r.json().then(async (rr) => {
-                console.log(rr);
+                // console.log(rr);
                 let respRename = await axios.post(`/api/train/rename`, {
                     oldName: rr.data.uuid,
                     newName: newName,
