@@ -4,7 +4,7 @@
 # This base stage ensures all other stages are using the same base image
 # and provides common configuration for all stages, such as the working dir.
 ###################################################
-FROM node:22 AS base
+FROM node:20 AS base
 WORKDIR /usr/local/kstf-web
 
 ################## CLIENT STAGES ##################
