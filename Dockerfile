@@ -4,7 +4,7 @@
 # This base stage ensures all other stages are using the same base image
 # and provides common configuration for all stages, such as the working dir.
 ###################################################
-FROM node:20 AS base
+FROM node:22 AS base
 WORKDIR /usr/local/kstf-web
 
 ################## CLIENT STAGES ##################
@@ -17,7 +17,7 @@ WORKDIR /usr/local/kstf-web
 ###################################################
 FROM base AS client-base
 COPY reactjs/package.json reactjs/package-lock.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --force
 COPY reactjs/index.html reactjs/vite.config.js ./
 COPY reactjs/public ./public
 COPY reactjs/src ./src
