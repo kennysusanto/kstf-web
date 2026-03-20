@@ -44,6 +44,8 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -464,15 +466,20 @@ function App() {
         return fullUrl;
     };
 
+    
+    const theme = useTheme();
+    const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+    const cols = isSmallScreen ? 4 : 8;
+
     return (
-        <Container className="container-dataset">
+        <>
             <Grid container columns={12} spacing={2}>
                 <Grid size={12}>
                     <Typography variant="h4" component="h2" gutterBottom>
                         Dataset
                     </Typography>
                 </Grid>
-                <Grid size={{ sm: 12, md: 6 }}>
+                <Grid size={12}>
                     <Card variant="outlined">
                         <CardContent>
                             <Grid container spacing={1} columns={12}>
@@ -502,7 +509,7 @@ function App() {
                                                                             {classGroup.name} ({classGroup.count})
                                                                         </Typography>
                                                                         <ButtonGroup>
-                                                                            <Button variant="contained" size="small" component={Link} to={`/dataset/create/${classGroup.id}`}>
+                                                                            <Button variant="outlined" size="small" component={Link} to={`/dataset/create/${classGroup.id}`}>
                                                                                 Capture
                                                                             </Button>
                                                                             <Button variant="contained" color="error" size="small" onClick={() => handleOpenDeleteClassDialog(classGroup)}>
@@ -513,7 +520,7 @@ function App() {
 
                                                                 </Grid>
                                                                 <Grid size={12}>
-                                                                    <ImageList sx={{ maxHeight: "220px" }} cols={4} rowHeight={80}>
+                                                                    <ImageList sx={{ maxHeight: "220px"}} cols={cols} rowHeight={80}>
                                                                         {classGroup.data.map((item) => (
                                                                             <ImageListItem
                                                                                 key={item.name}
@@ -606,7 +613,7 @@ function App() {
                 </DialogActions>
             </Dialog>
             <ToastContainer limit={5} />
-        </Container>
+        </>
     );
 }
 

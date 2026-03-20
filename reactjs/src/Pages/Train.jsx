@@ -362,7 +362,7 @@ function App() {
     const listStyle = {
         py: 0,
         width: "100%",
-        maxWidth: 360,
+        // maxWidth: 360,
         borderRadius: 12,
         border: "1px solid",
         borderColor: "divider",
@@ -370,14 +370,14 @@ function App() {
     };
 
     return (
-        <Container className="container-training">
+        <>
             <Grid container columns={12} spacing={2}>
                 <Grid size={12}>
                     <Typography variant="h4" component="h2" gutterBottom>
                         Train
                     </Typography>
                 </Grid>
-                <Grid size={{ sm: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                     <Grid container spacing={2} columns={12}>
                         <Grid size={12}>
                             <Card variant="outlined">
@@ -455,40 +455,42 @@ function App() {
                                 </CardContent>
                             </Card>
                         </Grid>
-                        <Grid size={12}>
-                            <Card variant="outlined">
-                                <CardContent>
-                                    <Grid container spacing={1} columns={12}>
-                                        <Grid size={12}>
-                                            <Typography variant="h6" component="h3">
-                                                Models
-                                            </Typography>
-                                        </Grid>
-                                        <Grid size={12}>
-                                            <List style={listStyle}>
-                                                {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
-                                                {modelsQuery.status === "success"
-                                                    ? models.map((m) => (
-                                                        <>
-                                                            <ListItemButton
-                                                                key={m.uid}
-                                                                onClick={() => {
-                                                                    setDialogData({
-                                                                        ...m,
-                                                                    });
-                                                                    setShowDialog(true);
-                                                                }}
-                                                            >
-                                                                <ListItemText primary={m.modelName}></ListItemText>
-                                                            </ListItemButton>
-                                                            <Divider component="li" />
-                                                        </>
-                                                    ))
-                                                    : null}
-                                            </List>
-                                        </Grid>
+                    </Grid>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                    <Card variant="outlined">
+                        <CardContent>
+                            <Grid container spacing={1} columns={12}>
+                                <Grid size={12}>
+                                    <Typography variant="h6" component="h3">
+                                        Models
+                                    </Typography>
+                                </Grid>
+                                <Grid size={12}>
+                                    <List style={listStyle}>
+                                        {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
+                                        {modelsQuery.status === "success"
+                                            ? models.map((m) => (
+                                                <>
+                                                    <ListItemButton
+                                                        key={m.uid}
+                                                        onClick={() => {
+                                                            setDialogData({
+                                                                ...m,
+                                                            });
+                                                            setShowDialog(true);
+                                                        }}
+                                                    >
+                                                        <ListItemText primary={m.modelName}></ListItemText>
+                                                    </ListItemButton>
+                                                    <Divider component="li" />
+                                                </>
+                                            ))
+                                            : null}
+                                    </List>
+                                </Grid>
 
-                                        {/* <Grid size={12}>
+                                {/* <Grid size={12}>
                                             <Typography variant="h6" component="h3">
                                                 Samples
                                             </Typography>
@@ -506,11 +508,9 @@ function App() {
                                                 }
                                             </ImageList>
                                         </Grid> */}
-                                    </Grid>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
                 </Grid>
             </Grid>
             <Dialog open={showDialog} onClose={handleCloseDialog}>
@@ -532,7 +532,7 @@ function App() {
                 </DialogActions>
             </Dialog>
             <ToastContainer limit={5} />
-        </Container>
+        </>
     );
 }
 

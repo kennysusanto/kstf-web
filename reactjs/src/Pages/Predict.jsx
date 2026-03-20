@@ -56,7 +56,7 @@ function App() {
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
     const [numberOfCameras, setNumberOfCameras] = useState(0);
-    let video = document.querySelector(".container-dataset #video");
+    let video = document.querySelector("#video");
     let canvas = useRef(null);
     let canvasctx = useRef(null);
     const [devices, setDevices] = useState([]);
@@ -165,8 +165,8 @@ function App() {
             detector.estimateFaces(video, estimationConfig).then((faces) => {
                 if (faces.length > 0) {
                     let r = faces[0].box;
-                    let canvas = document.querySelector(".container-dataset .canvas2");
-                    let image = document.querySelector(".container-dataset .img1");
+                    let canvas = document.querySelector(".canvas2");
+                    let image = document.querySelector(".img1");
                     let ctx = canvas.getContext("2d");
                     canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
                     canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
@@ -251,7 +251,7 @@ function App() {
     };
 
     const clearPreview = () => {
-        let image = document.querySelector(".container-dataset .img1");
+        let image = document.querySelector(".img1");
         image.setAttribute("src", "");
         image.style.visibility = "hidden";
         setImage(null);
@@ -263,8 +263,8 @@ function App() {
 
         // if (faces.length > 0) {
         // let r = faces[0].box;
-        let canvas = document.querySelector(".container-dataset .canvas2");
-        let image = document.querySelector(".container-dataset .img1");
+        let canvas = document.querySelector(".canvas2");
+        let image = document.querySelector(".img1");
         // let ctx = canvas.getContext("2d");
         // canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
         // canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
@@ -371,14 +371,14 @@ function App() {
     };
 
     return (
-        <Container className="container-dataset">
+        <>
             <Grid container columns={12} spacing={2}>
                 <Grid size={12}>
                     <Typography variant="h4" component="h2" gutterBottom>
                         Predict
                     </Typography>
                 </Grid>
-                <Grid size={{ sm: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                     <Card variant="outlined">
                         <CardContent>
                             {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
@@ -462,7 +462,7 @@ function App() {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid size={{ sm: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                     <Card variant="outlined">
                         <CardContent>
                             <Typography variant="h6" component="h3">
@@ -497,7 +497,7 @@ function App() {
                 </Grid>
             </Grid>
             <ToastContainer limit={5} />
-        </Container>
+        </>
     );
 }
 

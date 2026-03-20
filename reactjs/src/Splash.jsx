@@ -58,7 +58,7 @@ function App() {
 
     return (
         <>
-            <Typography variant="h3" component="h1" gutterBottom>
+            <Typography variant="h4" component="h2" gutterBottom>
                 Welcome to KSTF
             </Typography>
             <Box sx={{ display: "grid", gap: 2 }}>
