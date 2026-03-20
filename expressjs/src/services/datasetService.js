@@ -1,6 +1,6 @@
 import fs from "fs";
 import { uuidv4, readFilesSync } from "../helpers/misc.js";
-import datatsetClassRepository from "../repositories/datasetClassRepository.js";
+import datasetImageRepository from "../repositories/datasetImageRepository.js";
 import datasetClassRepository from "../repositories/datasetClassRepository.js";
 
 const dirname = "./src/public/dataset";
@@ -78,13 +78,15 @@ function saveDatasetImages(images = []) {
         const buffer = Buffer.from(payload, "base64");
 
         fs.writeFileSync(`${dir}/${name}_${imageId}.png`, buffer);
+
+        datasetImageRepository.insertDatasetImage({ id: imageId, dataset_class_id: id, path: `${dir}/${name}_${imageId}.png`, created_at: new Date(), updated_at: new Date(), deleted_at: null });
     }
 
     return saved;
 }
 
 function getDatasetClass(id) {
-    return datatsetClassRepository.getDatasetClassById(id);
+    return datasetClassRepository.getDatasetClassById(id);
 }
 
 function createDatasetClass(name) {
@@ -99,7 +101,7 @@ function createDatasetClass(name) {
     const id = uuidv4();
     const dir = `${dirname}/${id}_${trimmedName}`;
 
-    datatsetClassRepository.insertDatasetClass({ id, name: trimmedName, created_at: new Date(), updated_at: new Date(), deleted_at: null });
+    datasetClassRepository.insertDatasetClass({ id, name: trimmedName, created_at: new Date(), updated_at: new Date(), deleted_at: null });
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -117,6 +119,9 @@ function deleteDatasetClassFile(folder, filename) {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
+
+    let id = filename.split("_")[1].replaceAll(".png", "");
+    datasetImageRepository.deleteDatasetImageById(id);
 }
 
 function deleteDatasetClassFolder(folder) {

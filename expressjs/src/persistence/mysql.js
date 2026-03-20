@@ -64,8 +64,9 @@ async function init() {
         charset: "utf8mb4",
     });
 
-    await queryPool(pool, "CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean) DEFAULT CHARSET utf8mb4");
-    await queryPool(pool, "CREATE TABLE IF NOT EXISTS dataset_class (id varchar(36) not null, name varchar(255) not null, created_at datetime not null, updated_at datetime, deleted_at datetime) DEFAULT CHARSET utf8mb4");
+    await queryPool(pool, "CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean, primary key (id)) DEFAULT CHARSET utf8mb4");
+    await queryPool(pool, "CREATE TABLE IF NOT EXISTS dataset_class (id varchar(36) not null, name varchar(255) not null, created_at datetime not null, updated_at datetime, deleted_at datetime, primary key (id)) DEFAULT CHARSET utf8mb4");
+    await queryPool(pool, "CREATE TABLE IF NOT EXISTS dataset_image (id varchar(36) not null, dataset_class_id varchar(36) not null, path varchar(255) not null, created_at datetime not null, updated_at datetime, deleted_at datetime, primary key (id), index dataset_class_index (dataset_class_id), constraint fk_dataset_class_id foreign key (dataset_class_id) references dataset_class(id) on delete cascade) DEFAULT CHARSET utf8mb4");
 
     console.log(`Connected to mysql db at host ${host}`);
 }
