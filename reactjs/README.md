@@ -1,12 +1,60 @@
-# React + Vite
+# KSTF Web Frontend (`reactjs`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite client for the KSTF face recognition platform.
 
-Currently, two official plugins are available:
+## Current Scope
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Login flow (`email + password`)
+- Auth token stored in `localStorage` as `authToken`
+- Shared API client with automatic `Authorization: Bearer <token>` header
+- Protected app routes for:
+	- Dataset management
+	- Model training
+	- Prediction
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19
+- React Router
+- MUI
+- React Query
+- Axios
+- TensorFlow.js + MediaPipe Face Detection
+
+## Environment
+
+Create `.env` in this folder:
+
+`VITE_API_URL=http://localhost:5172`
+
+## Run (Local)
+
+`npm install`
+
+`npm run dev`
+
+App runs on `http://localhost:5173` by default.
+
+## Build
+
+`npm run build`
+
+`npm run preview`
+
+`npm run build-dev` builds and copies `dist` to backend static assets.
+
+## App Routes
+
+- `/login`
+- `/`
+- `/dataset`
+- `/dataset/create`
+- `/dataset/create/:id`
+- `/train`
+- `/predict`
+
+## Auth Notes
+
+- Login request goes to `POST /api/auth/login`
+- On success, token is saved and attached to outgoing API requests by `src/services/apiClient.js`
+- Logout clears local auth state and token in browser storage
