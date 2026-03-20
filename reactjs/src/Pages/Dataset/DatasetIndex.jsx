@@ -44,13 +44,13 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../../services/apiUrl.js";
 import { Link } from "react-router";
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 let nextId = 0;
 
@@ -182,16 +182,16 @@ function App() {
         }, 200);
     };
 
-    useEffect(() => {
-        (async () => {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter((i) => i.kind == "videoinput");
-            setDevices(videoDevices);
-            if (videoDevices.length > 0) {
-                setActiveDeviceId(videoDevices[0].deviceId);
-            }
-        })();
-    }, []);
+    // useEffect(() => {
+    //     (async () => {
+    //         const devices = await navigator.mediaDevices.enumerateDevices();
+    //         const videoDevices = devices.filter((i) => i.kind == "videoinput");
+    //         setDevices(videoDevices);
+    //         if (videoDevices.length > 0) {
+    //             setActiveDeviceId(videoDevices[0].deviceId);
+    //         }
+    //     })();
+    // }, []);
 
     useEffect(() => {
         (async () => {
@@ -465,11 +465,10 @@ function App() {
         // console.log(fullUrl);
         return fullUrl;
     };
-
     
     const theme = useTheme();
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
-    const cols = isSmallScreen ? 4 : 8;
+    const cols = isSmallScreen ? 3 : 8;
 
     return (
         <>
@@ -484,12 +483,14 @@ function App() {
                         <CardContent>
                             <Grid container spacing={1} columns={12}>
                                 <Grid size={12}>
-                                    <Typography variant="h6" component="h3" gutterBottom>
-                                        Classes
-                                    </Typography>
-                                    <Button variant="contained" size="small" onClick={() => setShowAddClassDialog(true)}>
-                                        Add Class
-                                    </Button>
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                                        <Typography variant="h6" component="h3" gutterBottom>
+                                            Classes
+                                        </Typography>
+                                        <Button variant="contained" size="small" onClick={() => setShowAddClassDialog(true)}>
+                                            Add Class
+                                        </Button>
+                                    </Box>
                                 </Grid>
                                 <Grid size={12}>
                                     <Grid container spacing={2}>
@@ -512,7 +513,7 @@ function App() {
                                                                             <Button variant="outlined" size="small" component={Link} to={`/dataset/create/${classGroup.id}`}>
                                                                                 Capture
                                                                             </Button>
-                                                                            <Button variant="contained" color="error" size="small" onClick={() => handleOpenDeleteClassDialog(classGroup)}>
+                                                                            <Button variant="outlined" color="error" size="small" onClick={() => handleOpenDeleteClassDialog(classGroup)}>
                                                                                 Delete
                                                                             </Button>
                                                                         </ButtonGroup>

@@ -21,7 +21,14 @@ const app = express();
 const port = 5172;
 
 const corsOptions = {
-    origin: ["http://localhost:5173", "http://192.168.0.187:5173", "https://192.168.1.5:5173", "https://ksdedicated.work", "https://api.ksdedicated.work"], // Replace with your actual domain
+    origin: [
+        "http://localhost:5173",
+        "https://192.168.0.187:5173",
+        "http://192.168.0.187:5173",
+        "https://192.168.1.5:5173",
+        "https://ksdedicated.work",
+        "https://api.ksdedicated.work"
+    ],
 };
 
 app.use(cors(corsOptions));

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { ToastContainer, toast, Slide } from "react-toastify";
 
 // import Container from "react-bootstrap/Container";
@@ -12,25 +12,27 @@ import { ToastContainer, toast, Slide } from "react-toastify";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
-import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import InputLabel from "@mui/material/InputLabel";
 import InputAdornment from "@mui/material/InputAdornment";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormControl from "@mui/material/FormControl";
-import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 
 import axios from "axios";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { AuthContext } from "../context/AuthContext.jsx";
 import { getApiUrl } from "../services/apiUrl.js";
+import "./Login.css";
 
 function App() {
-    const { isLoggedIn, user, login, logout } = useContext(AuthContext);
+    const { login } = useContext(AuthContext);
     const [errorInput, setErrorInput] = useState(false);
     const [message, setMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -107,87 +109,62 @@ function App() {
         }
     };
     return (
-        <Container className="container-training">
-            <Box component="form" noValidate onSubmit={handleSubmit}>
-                <Grid container columns={12}>
-                    <Grid size={12}>
-                        <h3 className="text-center">Login</h3>
-                        <p className="text-center">
-                            API Status:{" "}
-                            {apiConnected === null ? "Checking connection..." : apiConnected ? "Connected" : "Cannot connect to API"}
-                        </p>
-                    </Grid>
+        <Container maxWidth="sm" className="login-page-root">
+            <Paper elevation={2} className="login-card" sx={{ p: { xs: 3, sm: 4 } }}>
+                <Stack spacing={3} component="form" noValidate onSubmit={handleSubmit}>
+                    <Box className="login-branding" sx={{ textAlign: "center" }}>
+                        <BadgeOutlined fontSize="large" />
+                        <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                            KSTF
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Face Recognition Platform
+                        </Typography>
+                    </Box>
 
-                    <Grid size={12}>
-                        <FormControl sx={{ m: 1, width: "25ch" }} variant="outlined" error={errorInput}>
-                            <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
-                            <OutlinedInput id="outlined-adornment-username" name="username" label="Username" error={errorInput} />
-                            {/* <FormHelperText error={errorInput}>
-                                <InfoOutlined />
-                                Oops! something is wrong.
-                            </FormHelperText> */}
-                        </FormControl>
-                        <FormControl sx={{ m: 1, width: "25ch" }} variant="outlined" error={errorInput}>
-                            <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-                            <OutlinedInput
-                                id="outlined-adornment-password"
-                                type={showPassword ? "text" : "password"}
-                                name="password"
-                                endAdornment={
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            aria-label={showPassword ? "hide the password" : "display the password"}
-                                            onClick={handleClickShowPassword}
-                                            onMouseDown={handleMouseDownPassword}
-                                            onMouseUp={handleMouseUpPassword}
-                                            edge="end"
-                                        >
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                }
-                                label="Password"
-                                error={errorInput}
-                            />
-                            {/* <FormHelperText >
-                                <InfoOutlined />
-                                Oops! something is wrong.
-                            </FormHelperText> */}
-                        </FormControl>
-                        {/* <Form.Group>
-                            <Form.Label id="input-username">Username</Form.Label>
-                            <InputGroup className="mb-3">
-                                <Form.Control name="username" placeholder="johndoe" aria-label="Username" aria-describedby="input-username" required />
-                                <Form.Control.Feedback type="invalid">Please enter an username.</Form.Control.Feedback>
-                            </InputGroup>
-                        </Form.Group>
+                    <Chip
+                        label={apiConnected === null ? "API: Checking connection..." : apiConnected ? "API: Connected" : "API: Cannot connect"}
+                        color={apiConnected === false ? "error" : "default"}
+                        variant="outlined"
+                        sx={{ alignSelf: "center" }}
+                    />
 
-                        <Form.Group>
-                            <Form.Label id="input-username">Password</Form.Label>
-                            <InputGroup className="mb-3">
-                                <Form.Control
-                                    name="password"
-                                    placeholder="1234"
-                                    aria-label="Username"
-                                    type="password"
-                                    aria-describedby="input-username"
-                                    required
-                                />
-                                <Form.Control.Feedback type="invalid">Please enter a password.</Form.Control.Feedback>
-                            </InputGroup>
-                        </Form.Group> */}
-                    </Grid>
-                    <Grid size={12}>
-                        <Button variant="contained" type="submit">
-                            Login
-                        </Button>
-                    </Grid>
-                    <Grid size={12}>
-                        <p className="text-center">{message}</p>
-                    </Grid>
-                </Grid>
-            </Box>
+                    <FormControl fullWidth variant="outlined" error={errorInput}>
+                        <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
+                        <OutlinedInput id="outlined-adornment-username" name="username" label="Username" error={errorInput} />
+                    </FormControl>
 
+                    <FormControl fullWidth variant="outlined" error={errorInput}>
+                        <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                        <OutlinedInput
+                            id="outlined-adornment-password"
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            endAdornment={
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label={showPassword ? "hide the password" : "display the password"}
+                                        onClick={handleClickShowPassword}
+                                        onMouseDown={handleMouseDownPassword}
+                                        onMouseUp={handleMouseUpPassword}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            }
+                            label="Password"
+                            error={errorInput}
+                        />
+                    </FormControl>
+
+                    <Button variant="contained" type="submit" size="large" fullWidth>
+                        Sign In
+                    </Button>
+
+                    {message ? <Alert severity="error">{message}</Alert> : null}
+                </Stack>
+            </Paper>
             <ToastContainer limit={5} />
         </Container>
     );

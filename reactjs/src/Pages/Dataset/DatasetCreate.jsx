@@ -37,11 +37,15 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router";
 import { getApiUrl } from "../../services/apiUrl.js";
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 let nextId = 0;
 
@@ -52,7 +56,7 @@ function App() {
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
     const [numberOfCameras, setNumberOfCameras] = useState(0);
-    let video = document.querySelector(".container-dataset #video");
+    let video = document.querySelector("#video");
     let canvas = useRef(null);
     let canvasctx = useRef(null);
     const [devices, setDevices] = useState([]);
@@ -131,8 +135,8 @@ function App() {
             detector.estimateFaces(video, estimationConfig).then((faces) => {
                 if (faces.length > 0) {
                     let r = faces[0].box;
-                    let canvas = document.querySelector(".container-dataset .canvas2");
-                    let image = document.querySelector(".container-dataset .img1");
+                    let canvas = document.querySelector(".canvas2");
+                    let image = document.querySelector(".img1");
                     let ctx = canvas.getContext("2d");
                     canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
                     canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
@@ -172,7 +176,7 @@ function App() {
     };
 
     const clearPreview = () => {
-        let image = document.querySelector(".container-dataset .img1");
+        let image = document.querySelector(".img1");
         image.setAttribute("src", "");
         image.style.visibility = "hidden";
         setImage(null);
@@ -184,8 +188,8 @@ function App() {
 
         if (faces.length > 0) {
             let r = faces[0].box;
-            let canvas = document.querySelector(".container-dataset .canvas2");
-            let image = document.querySelector(".container-dataset .img1");
+            let canvas = document.querySelector(".canvas2");
+            let image = document.querySelector(".img1");
             let ctx = canvas.getContext("2d");
             canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
             canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
@@ -231,7 +235,7 @@ function App() {
             return;
         }
 
-        let canvas = document.querySelector(".container-dataset .canvas2");
+        let canvas = document.querySelector(".canvas2");
         let data = canvas.toDataURL("image/png");
         setImage(data);
         images.push({ id: cc.id, uniqueID: uuidv4(), name: cc.name, data });
@@ -328,8 +332,12 @@ function App() {
         navigate("/dataset");
     };
 
+    const theme = useTheme();
+        const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+        const cols = isSmallScreen ? 3 : 6;
+
     return (
-        <Container className="container-dataset">
+        <>
             <Grid container columns={12} spacing={2}>
                 <Grid size={12}>
                     <Button variant="contained" component={Link} to="/dataset">
@@ -337,133 +345,142 @@ function App() {
                     </Button>
                 </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
-                    {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
-                    <Select
-                        onChange={(event) => {
-                            setActiveDeviceId(event.target.value);
-                        }}
-                        value={activeDeviceId}
-                        fullWidth
-                    >
-                        {devices.map((d) => (
-                            <MenuItem key={d.deviceId} value={d.deviceId}>
-                                {d.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    <Grid container columns={12} spacing={1} minHeight={300}>
-                        <Grid size={6}>
-                            <div className="m-2" style={{ width: "100%" }}>
-                                <Camera
-                                    ref={camera}
-                                    numberOfCamerasCallback={(val) => {
-                                        textToast("Check your camera");
-                                        setNumberOfCameras(val);
-                                    }}
-                                    aspectRatio={isMobile ? 3 / 4 : 4 / 3}
-                                    videoSourceDeviceId={activeDeviceId}
-                                    videoReadyCallback={async () => {
-                                        console.log("Video feed ready.");
-                                    }}
-                                />
-                                <canvas className="canvas1 d-none" />
-                                <canvas className="canvas2 d-none" />
-                            </div>
+                    <Card variant="outlined">
+                        <CardContent>
 
-                            <ButtonGroup variant="outlined" sx={{ width: "100%" }}>
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        camera.current.switchCamera();
-                                    }}
-                                >
-                                    Flip Camera
-                                </Button>
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        setCapturing(!capturing);
-                                        capturingRef.current = !capturing;
-                                    }}
-                                >
-                                    {capturing ? "Stop Track" : "Track Face"}
-                                </Button>
-                            </ButtonGroup>
-                        </Grid>
-                        <Grid size={6}>
-                            <div className="m-2">
-                                <img className="img1" width="100%" />
-                                {image != null ? (
-                                    <Button
-                                        onClick={() => {
-                                            clearPreview();
-                                        }}
-                                        variant="contained"
-                                    >
-                                        Clear
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </Grid>
-                    </Grid>
-                    
+                            {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
+                            <Select
+                                onChange={(event) => {
+                                    setActiveDeviceId(event.target.value);
+                                }}
+                                value={activeDeviceId}
+                                fullWidth
+                            >
+                                {devices.map((d) => (
+                                    <MenuItem key={d.deviceId} value={d.deviceId}>
+                                        {d.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <Grid container columns={12} spacing={1} minHeight={300}>
+                                <Grid size={6}>
+                                    <div className="m-2" style={{ width: "100%" }}>
+                                        <Camera
+                                            ref={camera}
+                                            numberOfCamerasCallback={(val) => {
+                                                textToast("Check your camera");
+                                                setNumberOfCameras(val);
+                                            }}
+                                            aspectRatio={isMobile ? 3 / 4 : 4 / 3}
+                                            videoSourceDeviceId={activeDeviceId}
+                                            videoReadyCallback={async () => {
+                                                console.log("Video feed ready.");
+                                            }}
+                                        />
+                                        <canvas className="canvas1 d-none" />
+                                        <canvas className="canvas2 d-none" />
+                                    </div>
+
+                                    <ButtonGroup variant="outlined" sx={{ width: "100%" }}>
+                                        <Button
+                                            hidden={numberOfCameras <= 1}
+                                            onClick={() => {
+                                                camera.current.switchCamera();
+                                            }}
+                                        >
+                                            Flip Camera
+                                        </Button>
+                                        <Button
+                                            hidden={numberOfCameras <= 1}
+                                            onClick={() => {
+                                                setCapturing(!capturing);
+                                                capturingRef.current = !capturing;
+                                            }}
+                                        >
+                                            {capturing ? "Stop Track" : "Track Face"}
+                                        </Button>
+                                    </ButtonGroup>
+                                </Grid>
+                                <Grid size={6}>
+                                    <div className="m-2">
+                                        <img className="img1" width="100%" />
+                                        {image != null ? (
+                                            <Button
+                                                onClick={() => {
+                                                    clearPreview();
+                                                }}
+                                                variant="contained"
+                                            >
+                                                Clear
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                </Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
+
                 </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
-                    <Grid container spacing={1} columns={12}>
-                        <Grid container size={12}>
-                        {selectedClassId ? (
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                Capture target: {selectedClass ? selectedClass.name : "Unknown class"} ({selectedClassId})
-                            </Typography>
-                        ) : null}
-                        <Button onClick={async () => {
-                            await captureImage(selectedClass);
-                            scrollToBottom();
-                        }} variant="contained" color="success">Capture</Button>
-                        <ImageList sx={{ maxHeight: "220px" }} cols={4} rowHeight={80}>
-                            {images.map((item) => (
-                                <ImageListItem
-                                    key={item.uniqueID}
-                                    sx={{ borderRadius: 1, overflow: "hidden", cursor: "pointer" }}
-                                    // onClick={() => {
-                                    //     setDialogData({
-                                    //         classId: selectedClassId,
-                                    //         ...item,
-                                    //         folder: `${classGroup.id}_${classGroup.name}`,
-                                    //         filename: `${item.name}${item.ext}`,
-                                    //         url: getImageUrl(classGroup.id, classGroup.name, item.name, item.ext),
-                                    //     });
-                                    //     setShowDialog(true);
-                                    // }}
-                                >
-                                    <img
-                                        srcSet={item.data}
-                                        src={item.data}
-                                        alt={item.name}
-                                        loading="lazy"
-                                    />
-                                </ImageListItem>
-                            ))}
-                        </ImageList>
-                    </Grid>
-                        <Grid size={12}>
-                            {mutation.isPending ? (
-                                "Saving..."
-                            ) : (
-                                <>
-                                    <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged}>
-                                        Save
-                                    </Button>
-                                    {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
-                                    {mutation.isSuccess ? <span>Save success!</span> : null}
-                                </>
-                            )}
-                        </Grid>
-                    </Grid>
+                    <Card variant="outlined">
+                        <CardContent>
+                            <Grid container spacing={1} columns={12}>
+                                <Grid container size={12}>
+                                    {selectedClassId ? (
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                            Capture target: {selectedClass ? selectedClass.name : "Unknown class"} ({selectedClassId})
+                                        </Typography>
+                                    ) : null}
+                                    <Button onClick={async () => {
+                                        await captureImage(selectedClass);
+                                        // scrollToBottom();
+                                    }} variant="contained" color="success">Capture</Button>
+                                    <ImageList sx={{ maxHeight: "220px" }} cols={cols} rowHeight={80}>
+                                        {images.map((item) => (
+                                            <ImageListItem
+                                                key={item.uniqueID}
+                                                sx={{ borderRadius: 1, overflow: "hidden", cursor: "pointer" }}
+                                            // onClick={() => {
+                                            //     setDialogData({
+                                            //         classId: selectedClassId,
+                                            //         ...item,
+                                            //         folder: `${classGroup.id}_${classGroup.name}`,
+                                            //         filename: `${item.name}${item.ext}`,
+                                            //         url: getImageUrl(classGroup.id, classGroup.name, item.name, item.ext),
+                                            //     });
+                                            //     setShowDialog(true);
+                                            // }}
+                                            >
+                                                <img
+                                                    srcSet={item.data}
+                                                    src={item.data}
+                                                    alt={item.name}
+                                                    loading="lazy"
+                                                />
+                                            </ImageListItem>
+                                        ))}
+                                    </ImageList>
+                                </Grid>
+                                <Grid size={12}>
+                                    {mutation.isPending ? (
+                                        "Saving..."
+                                    ) : (
+                                        <>
+                                            <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged}>
+                                                Save
+                                            </Button>
+                                            {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
+                                            {mutation.isSuccess ? <span>Save success!</span> : null}
+                                        </>
+                                    )}
+                                </Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
                 </Grid>
             </Grid>
             <ToastContainer limit={5} />
-        </Container>
+        </>
     );
 }
 

@@ -63,7 +63,7 @@ function App() {
             </Typography>
             <Box sx={{ display: "grid", gap: 2 }}>
                 {cards.map((card, index) => (
-                    <Card>
+                    <Card key={index}>
                         <CardActionArea component={Link} to={card.to}>
                             <CardContent>
                                 <Typography gutterBottom variant="h5" component="div">

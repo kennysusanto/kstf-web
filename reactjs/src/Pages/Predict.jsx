@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { Fragment, useState, useRef, useEffect } from "react";
 
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
@@ -471,8 +471,8 @@ function App() {
                             <List style={listStyle}>
                                 {status === "pending" ? <span>Loading...</span> : null}
                                 {status === "success"
-                                    ? models.map((m) => (
-                                        <>
+                                    ? models.map((m, index) => (
+                                        <Fragment key={m.uid}>
                                             <ListItemButton
                                                 key={m.uid}
                                                 onClick={() => {
@@ -486,7 +486,7 @@ function App() {
                                                 <ListItemText primary={m.modelName}></ListItemText>
                                             </ListItemButton>
                                             <Divider component="li" />
-                                        </>
+                                        </Fragment>
                                     ))
                                     : null}
                             </List>
