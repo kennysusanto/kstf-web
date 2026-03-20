@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "./Dataset.css";
+
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
 import "@tensorflow/tfjs-core";
@@ -41,14 +41,20 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import Divider from "@mui/material/Divider";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import Typography from "@mui/material/Typography";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getApiUrl } from "../services/apiUrl.js";
+import ImageList from "@mui/material/ImageList";
+import ImageListItem from "@mui/material/ImageListItem";
 
 let nextId = 0;
 
@@ -76,6 +82,7 @@ function App() {
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
     const [models, setModels] = useState([]);
+    const [samples, setSamples] = useState([]);
 
     const isMobile = browserWidth <= 768;
 
@@ -89,7 +96,7 @@ function App() {
         setDialogData(null);
         setShowDialog(false);
 
-        await axios.delete(`api/train/${dialogData.uid}`);
+        await axios.delete(getApiUrl(`/api/train/${dialogData.modelName}_${dialogData.uid}`));
         setModels([]);
         const dd = await modelsQuery.refetch();
         setModels(dd.data);
@@ -135,7 +142,7 @@ function App() {
     const processImage = async (classGroup) => {
         try {
             let pn = `${classGroup.id}_${classGroup.name}/${classGroup.data.name}${classGroup.data.ext}`;
-            let url = `/api/dataset/${pn}`;
+            let url = getApiUrl(`/api/dataset/${pn}`);
             url = encodeURI(url);
             // let response = await axios.get(url);
             // let base64img = response.data;
@@ -151,6 +158,7 @@ function App() {
 
             let fetchBlob = await axios.get(url, { responseType: "blob" });
             let bmp = await createImageBitmap(fetchBlob.data);
+            const canvas = document.createElement('canvas');
             let imageTensor = tf.tidy(function () {
                 // read file bytes
                 let videoFrameAsTensor = tf.browser.fromPixels(bmp);
@@ -160,8 +168,17 @@ function App() {
                     [Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH],
                     true
                 );
-
                 let normalizedTensorFrame = resizedTensorFrame.div(255);
+
+                // try {
+                //     // samples.push(normalizedTensorFrame.clone());
+                //     (async () => {
+                //         samples.push(await tf.browser.toPixels(normalizedTensorFrame));
+                //     })();
+                // }
+                // catch (err) {
+                //     console.error(err);
+                // }
 
                 return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
             });
@@ -234,9 +251,18 @@ function App() {
 
         tf.util.shuffleCombo(trainingDataInputs, trainingDataOutputs);
 
-        let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
+        console.log("dataset", dataset);
+        console.log("trainingDataOutputs", trainingDataOutputs);
+        const indices = trainingDataOutputs.map(classID => dataset.indexOf(dataset.find(m => m.id == classID)));
+        const outputsAsTensor = tf.tensor1d(indices, 'int32');
+        // let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
         let oneHotOutputs = tf.oneHot(outputsAsTensor, dataset.length);
         let inputsAsTensor = tf.stack(trainingDataInputs);
+
+
+        console.log("outputsAsTensor", await outputsAsTensor.data());
+        console.log("oneHotOutputs", await oneHotOutputs.data());
+        console.log("inputsAsTensor", await inputsAsTensor.data());
 
         let results = await model.fit(inputsAsTensor, oneHotOutputs, {
             shuffle: true,
@@ -251,6 +277,7 @@ function App() {
 
         // Make combined model for download.
 
+        // let combinedModel = model;
         let combinedModel = tf.sequential();
         combinedModel.add(mobileNetBase);
         combinedModel.add(model);
@@ -263,14 +290,14 @@ function App() {
         combinedModel.summary();
         console.log("TRAINING COMPLETE");
         // await combinedModel.save("downloads://my-model");
-        let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
-        let resp = await model.save(`${domain}/api/train`);
+        // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
+        let resp = await model.save(getApiUrl(`/api/train`));
 
         let newName = modelName;
         for (const r of resp.responses) {
             r.json().then(async (rr) => {
                 console.log(rr);
-                let respRename = await axios.post(`/api/train/rename`, {
+                let respRename = await axios.post(getApiUrl(`/api/train/rename`), {
                     oldName: rr.data.uuid,
                     newName: newName,
                 });
@@ -292,8 +319,9 @@ function App() {
     };
 
     const fetchQuery = async () => {
-        const data = await axios.get(`/api/dataset`);
+        const data = await axios.get(getApiUrl(`/api/dataset`));
         let classGroups = data.data.data;
+        // setSamples([]);
         for (const g of classGroups) {
             g.count = g.data.length;
             for (const file of g.data) {
@@ -323,7 +351,7 @@ function App() {
     const modelsQuery = useQuery({
         queryKey: ["models"],
         queryFn: async () => {
-            const data = await axios.get(`/api/train`);
+            const data = await axios.get(getApiUrl(`/api/train`));
 
             setModels(data.data.data);
 
@@ -344,103 +372,143 @@ function App() {
     return (
         <Container className="container-training">
             <Grid container columns={12} spacing={2}>
-                <Button variant="contained" href="/">
-                    Back
-                </Button>
-
+                <Grid size={12}>
+                    <Typography variant="h4" component="h2" gutterBottom>
+                        Train
+                    </Typography>
+                </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
                     <Grid container spacing={2} columns={12}>
                         <Grid size={12}>
-                            <h3>Classes</h3>
-                        </Grid>
-                        <Grid size={12}>
-                            <div>
-                                {status === "pending" ? <span>Loading...</span> : null}
-                                {status === "success" ? (
-                                    <Grid container spacing={2}>
-                                        {dataset.map((d) => (
-                                            <Grid>
-                                                <Button key={d.id} variant="outlined" disabled>
-                                                    {d.name} ({d.count})
-                                                </Button>
-                                            </Grid>
-                                        ))}
-                                    </Grid>
-                                ) : null}
-                            </div>
-                        </Grid>
-                        <Grid size={12}>
-                            {dataset !== undefined ? (
-                                <Grid container columns={12} spacing={2}>
-                                    <Grid size={12}>
-                                        <TextField
-                                            value={modelName}
-                                            label="Model name"
-                                            onChange={(e) => setModelName(e.target.value)}
-                                            placeholder="Awesome Model"
-                                            variant="filled"
-                                            fullWidth
-                                        />
-                                    </Grid>
-                                    <Grid size={12}>
-                                        <Button
-                                            className="mb-2"
-                                            variant="contained"
-                                            color="success"
-                                            disabled={
-                                                highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
-                                            }
-                                            title="Data count needs to be the same across all class"
-                                            onClick={() => {
-                                                console.log("TRAINING");
-                                                textToast("Training started");
+                            <Card variant="outlined">
+                                <CardContent>
+                                    <Grid container spacing={2} columns={12}>
+                                        <Grid size={12}>
+                                            <Typography variant="h6" component="h3">
+                                                Classes
+                                            </Typography>
+                                        </Grid>
+                                        <Grid size={12}>
+                                            <div>
+                                                {status === "pending" ? <span>Loading...</span> : null}
+                                                {status === "success" ? (
+                                                    <Grid container spacing={2}>
+                                                        {dataset.map((d) => (
+                                                            <Grid>
+                                                                <Button key={d.id} variant="outlined" disabled>
+                                                                    {d.name} ({d.count})
+                                                                </Button>
+                                                            </Grid>
+                                                        ))}
+                                                    </Grid>
+                                                ) : null}
+                                            </div>
+                                        </Grid>
+                                        <Grid size={12}>
+                                            {dataset !== undefined ? (
+                                                <Grid container columns={12} spacing={2}>
+                                                    <Grid size={12}>
+                                                        <TextField
+                                                            value={modelName}
+                                                            label="Model name"
+                                                            onChange={(e) => setModelName(e.target.value)}
+                                                            placeholder="Awesome Model"
+                                                            variant="filled"
+                                                            fullWidth
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <Button
+                                                            className="mb-2"
+                                                            variant="contained"
+                                                            color="success"
+                                                            disabled={
+                                                                highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
+                                                            }
+                                                            title="Data count needs to be the same across all class"
+                                                            onClick={() => {
+                                                                console.log("TRAINING");
+                                                                textToast("Training started");
 
-                                                setTimeout(async () => {
-                                                    await trainAndPredict();
-                                                }, 500);
-                                            }}
-                                            fullWidth
-                                        >
-                                            Train {modelName} on {dataset.length} classes
-                                        </Button>
+                                                                setTimeout(async () => {
+                                                                    await trainAndPredict();
+                                                                }, 500);
+                                                            }}
+                                                            fullWidth
+                                                        >
+                                                            Train {modelName} on {dataset.length} classes
+                                                        </Button>
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <span>Highest data count: {highestDataCount}</span>
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <span>
+                                                            All class length the same as highest data count:{" "}
+                                                            {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
+                                                        </span>
+                                                    </Grid>
+                                                </Grid>
+                                            ) : null}
+                                        </Grid>
                                     </Grid>
-                                    <Grid size={12}>
-                                        <span>Highest data count: {highestDataCount}</span>
-                                    </Grid>
-                                    <Grid size={12}>
-                                        <span>
-                                            All class length the same as highest data count:{" "}
-                                            {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
-                                        </span>
-                                    </Grid>
-                                </Grid>
-                            ) : null}
+                                </CardContent>
+                            </Card>
                         </Grid>
                         <Grid size={12}>
-                            <h3>Models</h3>
-                        </Grid>
-                        <Grid size={12}>
-                            <List style={listStyle}>
-                                {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
-                                {modelsQuery.status === "success"
-                                    ? models.map((m) => (
-                                          <>
-                                              <ListItemButton
-                                                  key={m.uid}
-                                                  onClick={() => {
-                                                      setDialogData({
-                                                          ...m,
-                                                      });
-                                                      setShowDialog(true);
-                                                  }}
-                                              >
-                                                  <ListItemText primary={m.uid}></ListItemText>
-                                              </ListItemButton>
-                                              <Divider component="li" />
-                                          </>
-                                      ))
-                                    : null}
-                            </List>
+                            <Card variant="outlined">
+                                <CardContent>
+                                    <Grid container spacing={1} columns={12}>
+                                        <Grid size={12}>
+                                            <Typography variant="h6" component="h3">
+                                                Models
+                                            </Typography>
+                                        </Grid>
+                                        <Grid size={12}>
+                                            <List style={listStyle}>
+                                                {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
+                                                {modelsQuery.status === "success"
+                                                    ? models.map((m) => (
+                                                        <>
+                                                            <ListItemButton
+                                                                key={m.uid}
+                                                                onClick={() => {
+                                                                    setDialogData({
+                                                                        ...m,
+                                                                    });
+                                                                    setShowDialog(true);
+                                                                }}
+                                                            >
+                                                                <ListItemText primary={m.modelName}></ListItemText>
+                                                            </ListItemButton>
+                                                            <Divider component="li" />
+                                                        </>
+                                                    ))
+                                                    : null}
+                                            </List>
+                                        </Grid>
+
+                                        {/* <Grid size={12}>
+                                            <Typography variant="h6" component="h3">
+                                                Samples
+                                            </Typography>
+                                            {samples.length}
+                                            <ImageList cols={3} rowHeight={150}>
+                                                {
+                                                    samples.map((s, index) => {
+                                                        let canvas = document.createElement('canvas');
+                                                        canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
+                                                        canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT; 
+                                                        let d = new ImageData(s, Constants.MOBILE_NET_INPUT_WIDTH, Constants.MOBILE_NET_INPUT_HEIGHT);
+                                                        canvas.getContext('2d').putImageData(d, 0, 0);
+                                                        return (<ImageListItem key={index}><img src={canvas.toDataURL()} alt={`Sample ${index}`} loading="lazy" /></ImageListItem>);
+                                                    })
+                                                }
+                                            </ImageList>
+                                        </Grid> */}
+                                    </Grid>
+                                </CardContent>
+                            </Card>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -450,7 +518,7 @@ function App() {
                 <DialogContent>
                     {dialogData == null ? null : (
                         <DialogContentText id="alert-dialog-description">
-                            You are viewing <b>{dialogData.uid}</b>
+                            You are viewing <b>{dialogData.modelName} ({dialogData.uid})</b>
                         </DialogContentText>
                     )}
                 </DialogContent>

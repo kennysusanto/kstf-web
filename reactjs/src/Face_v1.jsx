@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 // import "./App.css";
 import "./Face.css";
 import { Camera } from "react-camera-pro";
+import { Link } from "react-router";
 
 import "@mediapipe/face_detection";
 import "@tensorflow/tfjs-core";
@@ -246,7 +247,7 @@ function App() {
     return (
         <>
             <h1>Face Detector</h1>
-            <a href="/">Back</a>
+            <Link to="/">Back</Link>
             <div>
                 <select
                     onChange={(event) => {

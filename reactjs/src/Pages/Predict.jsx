@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "./Dataset.css";
+
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
 import "@tensorflow/tfjs-core";
@@ -41,9 +41,13 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import Divider from "@mui/material/Divider";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getApiUrl } from "../services/apiUrl.js";
 
 let nextId = 0;
 
@@ -80,6 +84,7 @@ function App() {
     const [predictRes, setPredictRes] = useState(undefined);
     const [modelValue, setModelValue] = useState("");
     const [useModel, setUseModel] = useState(undefined);
+    const [sample, setSample] = useState(null);
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
@@ -180,9 +185,11 @@ function App() {
                         tf.tidy(function () {
                             let startDate = new Date();
                             // let imageFeatures = calculateFeaturesOnCurrentFrame();
-                            let prediction = useModel.predict(imageFeatures.expandDims()).squeeze();
-                            let highestIndex = prediction.argMax().arraySync();
-                            let predictionArray = prediction.arraySync();
+
+                            let prediction = useModel.predict([imageFeatures.reshape([1, 1280])]);
+                            // let prediction = useModel.predict(imageFeatures.expandDims()).squeeze();
+                            let highestIndex = indexOfMax(prediction.arraySync()[0]);
+                            let predictionArray = prediction.arraySync()[0];
                             // Do your operations
                             let endDate = new Date();
                             let ms = endDate.getTime() - startDate.getTime();
@@ -207,6 +214,24 @@ function App() {
             clearPreview();
         }
     };
+
+    const indexOfMax = (arr) => {
+        if (arr.length === 0) {
+            return -1;
+        }
+
+        var max = arr[0];
+        var maxIndex = 0;
+
+        for (var i = 1; i < arr.length; i++) {
+            if (arr[i] > max) {
+                maxIndex = i;
+                max = arr[i];
+            }
+        }
+
+        return maxIndex;
+    }
 
     const textToast = (msg) => {
         if (msg == "") {
@@ -263,6 +288,16 @@ function App() {
 
             let normalizedTensorFrame = resizedTensorFrame.div(255);
 
+            // (async () => {
+            //         let dd = await tf.browser.toPixels(normalizedTensorFrame);
+            //     let canvas = document.createElement("canvas");
+            //     canvas.width = 224;
+            //     canvas.height = 224;
+            //     let d = new ImageData(dd, Constants.MOBILE_NET_INPUT_WIDTH, Constants.MOBILE_NET_INPUT_HEIGHT);
+            //     canvas.getContext('2d').putImageData(d, 0, 0);
+            //     setSample(canvas.toDataURL());
+            // })();
+
             return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
             //return normalizedTensorFrame;
         });
@@ -282,7 +317,7 @@ function App() {
     } = useQuery({
         queryKey: ["models"],
         queryFn: async () => {
-            const data = await axios.get(`/api/train`);
+            const data = await axios.get(getApiUrl(`/api/train`));
 
             return data.data.data;
         },
@@ -296,9 +331,9 @@ function App() {
         if (modelValue === "") {
             return;
         }
-        console.log("Loading model value", `/api/model/${modelValue}/model.json`);
+        console.log("Loading model value", getApiUrl(`/api/model/${modelValue}/model.json`));
         (async () => {
-            const model = await tf.loadLayersModel(`/api/model/${modelValue}/model.json`);
+            const model = await tf.loadLayersModel(getApiUrl(`/api/model/${modelValue}/model.json`));
             model.summary();
             setUseModel(model);
 
@@ -317,7 +352,7 @@ function App() {
     } = useQuery({
         queryKey: ["classes"],
         queryFn: async () => {
-            const data = await axios.get(`/api/dataset`);
+            const data = await axios.get(getApiUrl(`/api/dataset`));
             let classGroups = data.data.data;
 
             return classGroups;
@@ -339,115 +374,126 @@ function App() {
         <Container className="container-dataset">
             <Grid container columns={12} spacing={2}>
                 <Grid size={12}>
-                    <Button variant="contained" href="/">
-                        Back
-                    </Button>
-                </Grid>
-
-                <Grid size={{ sm: 12, md: 6 }}>
-                    {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
-                    <Select
-                        onChange={(event) => {
-                            setActiveDeviceId(event.target.value);
-                        }}
-                        value={activeDeviceId}
-                        fullWidth
-                    >
-                        {devices.map((d) => (
-                            <MenuItem key={d.deviceId} value={d.deviceId}>
-                                {d.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    <Grid container columns={12} spacing={1}>
-                        <Grid size={6}>
-                            <div className="m-2" style={{ width: "100%" }}>
-                                <Camera
-                                    ref={camera}
-                                    numberOfCamerasCallback={(val) => {
-                                        textToast("Check your camera");
-                                        setNumberOfCameras(val);
-                                    }}
-                                    aspectRatio={isMobile ? 3 / 4 : 4 / 3}
-                                    videoSourceDeviceId={activeDeviceId}
-                                    videoReadyCallback={async () => {
-                                        console.log("Video feed ready.");
-                                    }}
-                                />
-                                <canvas className="canvas1 d-none" />
-                                <canvas className="canvas2 d-none" />
-                            </div>
-
-                            <ButtonGroup variant="outlined" sx={{ width: "100%" }}>
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        camera.current.switchCamera();
-                                    }}
-                                >
-                                    Flip Camera
-                                </Button>
-                                <Button
-                                    hidden={numberOfCameras <= 1}
-                                    onClick={() => {
-                                        setCapturing(!capturing);
-                                        capturingRef.current = !capturing;
-                                        scrollToBottom();
-                                        if (capturing) {
-                                            setModelValue("");
-                                        }
-                                    }}
-                                >
-                                    {capturing ? "Stop Track" : "Track Face"}
-                                </Button>
-                            </ButtonGroup>
-                        </Grid>
-                        <Grid size={6}>
-                            <div className="m-2">
-                                <img className="img1" width="100%" />
-                                {image != null ? (
-                                    <Button
-                                        onClick={() => {
-                                            clearPreview();
-                                        }}
-                                        variant="contained"
-                                    >
-                                        Clear
-                                    </Button>
-                                ) : null}
-                                {predictRes === undefined || !capturing ? null : (
-                                    <p className="mt-2">
-                                        Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
-                                    </p>
-                                )}
-                            </div>
-                        </Grid>
-                    </Grid>
+                    <Typography variant="h4" component="h2" gutterBottom>
+                        Predict
+                    </Typography>
                 </Grid>
                 <Grid size={{ sm: 12, md: 6 }}>
-                    <h3>Models</h3>
-                    <List style={listStyle}>
-                        {status === "pending" ? <span>Loading...</span> : null}
-                        {status === "success"
-                            ? models.map((m) => (
-                                  <>
-                                      <ListItemButton
-                                          key={m.uid}
-                                          onClick={() => {
-                                              setModelValue(m.uid);
-                                              setCapturing(false);
-                                              capturingRef.current = false;
-                                              scrollToBottom();
-                                          }}
-                                          selected={modelValue == m.uid}
-                                      >
-                                          <ListItemText primary={m.uid}></ListItemText>
-                                      </ListItemButton>
-                                      <Divider component="li" />
-                                  </>
-                              ))
-                            : null}
-                    </List>
+                    <Card variant="outlined">
+                        <CardContent>
+                            {/* <h3>{isMobile ? "Mobile" : "PC"}</h3> */}
+                            <Select
+                                onChange={(event) => {
+                                    setActiveDeviceId(event.target.value);
+                                }}
+                                value={activeDeviceId}
+                                fullWidth
+                            >
+                                {devices.map((d) => (
+                                    <MenuItem key={d.deviceId} value={d.deviceId}>
+                                        {d.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <Grid container columns={12} spacing={1} sx={{ mt: 1 }}>
+                                <Grid size={6}>
+                                    <div className="m-2" style={{ width: "100%" }}>
+                                        <Camera
+                                            ref={camera}
+                                            numberOfCamerasCallback={(val) => {
+                                                textToast("Check your camera");
+                                                setNumberOfCameras(val);
+                                            }}
+                                            aspectRatio={isMobile ? 3 / 4 : 4 / 3}
+                                            videoSourceDeviceId={activeDeviceId}
+                                            videoReadyCallback={async () => {
+                                                console.log("Video feed ready.");
+                                            }}
+                                        />
+                                        <canvas className="canvas1 d-none" />
+                                        <canvas className="canvas2 d-none" />
+                                    </div>
+
+                                    <ButtonGroup variant="outlined" sx={{ width: "100%" }}>
+                                        <Button
+                                            hidden={numberOfCameras <= 1}
+                                            onClick={() => {
+                                                camera.current.switchCamera();
+                                            }}
+                                        >
+                                            Flip Camera
+                                        </Button>
+                                        <Button
+                                            hidden={numberOfCameras <= 1}
+                                            onClick={() => {
+                                                setCapturing(!capturing);
+                                                capturingRef.current = !capturing;
+                                                scrollToBottom();
+                                                if (capturing) {
+                                                    setModelValue("");
+                                                }
+                                            }}
+                                        >
+                                            {capturing ? "Stop Track" : "Track Face"}
+                                        </Button>
+                                    </ButtonGroup>
+                                </Grid>
+                                <Grid size={6}>
+                                    <div className="m-2">
+                                        <img className="img1" width="100%" />
+                                        {image != null ? (
+                                            <Button
+                                                onClick={() => {
+                                                    clearPreview();
+                                                }}
+                                                variant="contained"
+                                            >
+                                                Clear
+                                            </Button>
+                                        ) : null}
+                                        {predictRes === undefined || !capturing ? null : (
+                                            <p className="mt-2">
+                                                Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
+                                            </p>
+                                        )}
+                                    </div>
+                                </Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid size={{ sm: 12, md: 6 }}>
+                    <Card variant="outlined">
+                        <CardContent>
+                            <Typography variant="h6" component="h3">
+                                Models
+                            </Typography>
+                            <List style={listStyle}>
+                                {status === "pending" ? <span>Loading...</span> : null}
+                                {status === "success"
+                                    ? models.map((m) => (
+                                        <>
+                                            <ListItemButton
+                                                key={m.uid}
+                                                onClick={() => {
+                                                    setModelValue(`${m.modelName}_${m.uid}`);
+                                                    setCapturing(false);
+                                                    capturingRef.current = false;
+                                                    scrollToBottom();
+                                                }}
+                                                selected={modelValue == `${m.modelName}_${m.uid}`}
+                                            >
+                                                <ListItemText primary={m.modelName}></ListItemText>
+                                            </ListItemButton>
+                                            <Divider component="li" />
+                                        </>
+                                    ))
+                                    : null}
+                            </List>
+
+                            {/* <img src={sample} /> */}
+                        </CardContent>
+                    </Card>
                 </Grid>
             </Grid>
             <ToastContainer limit={5} />

@@ -26,13 +26,39 @@ import InfoOutlined from "@mui/icons-material/InfoOutlined";
 
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AuthContext } from "../AuthContext.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
+import { getApiUrl } from "../services/apiUrl.js";
 
 function App() {
     const { isLoggedIn, user, login, logout } = useContext(AuthContext);
     const [errorInput, setErrorInput] = useState(false);
     const [message, setMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [apiConnected, setApiConnected] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const checkApiConnection = async () => {
+            try {
+                console.log(getApiUrl("/api/version"));
+                await axios.get(getApiUrl("/api/version"), { timeout: 5000 });
+                if (isMounted) {
+                    setApiConnected(true);
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setApiConnected(false);
+                }
+            }
+        };
+
+        checkApiConnection();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -60,7 +86,7 @@ function App() {
         }
         setErrorInput(false);
         try {
-            let ress = await axios.post(`/api/auth/login`, formDataObj);
+            let ress = await axios.post(getApiUrl("/api/auth/login"), formDataObj);
             if (ress.data) {
                 if (ress.data.user) {
                     login(ress.data.user, ress.data.token);
@@ -86,6 +112,10 @@ function App() {
                 <Grid container columns={12}>
                     <Grid size={12}>
                         <h3 className="text-center">Login</h3>
+                        <p className="text-center">
+                            API Status:{" "}
+                            {apiConnected === null ? "Checking connection..." : apiConnected ? "Connected" : "Cannot connect to API"}
+                        </p>
                     </Grid>
 
                     <Grid size={12}>

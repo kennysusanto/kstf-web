@@ -15,8 +15,9 @@ export function readFilesSync(dir) {
                     const stat = fs.statSync(filepath);
                     const isFile = stat.isFile();
 
-                    if (isFile) files.push({ filepath, name, ext, stat });
+                    if (isFile) files.push({ filepath, name, type: "file", ext, stat });
                 });
+                files.push({ filepath: path.resolve(dir, foldername), name: foldername, type: "folder" });
             } catch (err) {}
         });
 

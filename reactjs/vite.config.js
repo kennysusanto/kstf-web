@@ -5,6 +5,7 @@ import fs from "fs";
 
 // https://vite.dev/config/
 export default defineConfig({
+    envPrefix: ["VITE_", "API_"],
     server: {
         // host: "assemble-sitecore.com",
         // https: true,

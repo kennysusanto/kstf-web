@@ -44,12 +44,16 @@ router.get("/", (req, res, next) => {
         return found;
     };
     for (const file of files) {
-        let s = file.filepath.split("/");
-        let uid = s[s.length - 2];
+        if (file.type === "folder") continue;
+        let s = file.filepath.split("\\");
+        let folder = s[s.length - 2];
+        let uid = folder.split("_")[1];
+        let modelName = folder.split("_")[0];
         let g = findGroup(uid);
         if (!g) {
             let newGroup = {
                 uid,
+                modelName,
             };
             if (file.ext === ".json") {
                 newGroup.model = {

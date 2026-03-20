@@ -1,53 +1,80 @@
 import waitPort from "wait-port";
-import fs from "fs";
 import mysql from "mysql2";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const {
-    MYSQL_HOST: HOST,
-    MYSQL_HOST_FILE: HOST_FILE,
-    MYSQL_USER: USER,
-    MYSQL_USER_FILE: USER_FILE,
-    MYSQL_PASSWORD: PASSWORD,
-    MYSQL_PASSWORD_FILE: PASSWORD_FILE,
-    MYSQL_DB: DB,
-    MYSQL_DB_FILE: DB_FILE,
-} = process.env;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({
+    path: path.resolve(__dirname, "../../.env"),
+});
 
 let pool;
 
+function queryPool(poolInstance, sql, values = []) {
+    return new Promise((resolve, reject) => {
+        poolInstance.query(sql, values, (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows);
+        });
+    });
+}
+
 async function init() {
-    const host = HOST_FILE ? fs.readFileSync(HOST_FILE) : HOST;
-    const user = USER_FILE ? fs.readFileSync(USER_FILE) : USER;
-    const password = PASSWORD_FILE ? fs.readFileSync(PASSWORD_FILE) : PASSWORD;
-    const database = DB_FILE ? fs.readFileSync(DB_FILE) : DB;
+    const host = process.env.MYSQL_HOST;
+    const port = Number(process.env.MYSQL_PORT || 3306);
+    const user = process.env.MYSQL_USER;
+    const password = process.env.MYSQL_PASSWORD;
+    const database = process.env.MYSQL_DB;
 
     await waitPort({
         host,
-        port: 3306,
+        port,
         timeout: 10000,
         waitForDns: true,
+    });
+
+    const setupPool = mysql.createPool({
+        connectionLimit: 1,
+        host,
+        port,
+        user,
+        password,
+        charset: "utf8mb4",
+    });
+
+    await queryPool(setupPool, "CREATE DATABASE IF NOT EXISTS ?? CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", [database]);
+
+    await new Promise((resolve, reject) => {
+        setupPool.end((err) => {
+            if (err) return reject(err);
+            resolve();
+        });
     });
 
     pool = mysql.createPool({
         connectionLimit: 5,
         host,
+        port,
         user,
         password,
         database,
         charset: "utf8mb4",
     });
 
-    return new Promise((acc, rej) => {
-        pool.query("CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean) DEFAULT CHARSET utf8mb4", (err) => {
-            if (err) return rej(err);
+    await queryPool(pool, "CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean) DEFAULT CHARSET utf8mb4");
+    await queryPool(pool, "CREATE TABLE IF NOT EXISTS dataset_class (id varchar(36) not null, name varchar(255) not null, created_at datetime not null, updated_at datetime, deleted_at datetime) DEFAULT CHARSET utf8mb4");
 
-            console.log(`Connected to mysql db at host ${HOST}`);
-            acc();
-        });
-    });
+    console.log(`Connected to mysql db at host ${host}`);
 }
 
 async function teardown() {
+    if (!pool) {
+        return;
+    }
+
     return new Promise((acc, rej) => {
         pool.end((err) => {
             if (err) rej(err);
@@ -56,69 +83,16 @@ async function teardown() {
     });
 }
 
-async function getItems() {
-    return new Promise((acc, rej) => {
-        pool.query("SELECT * FROM todo_items", (err, rows) => {
-            if (err) return rej(err);
-            acc(
-                rows.map((item) =>
-                    Object.assign({}, item, {
-                        completed: item.completed === 1,
-                    })
-                )
-            );
-        });
-    });
-}
+async function query(sql, values = []) {
+    if (!pool) {
+        throw new Error("MySQL pool is not initialized. Call init() first.");
+    }
 
-async function getItem(id) {
-    return new Promise((acc, rej) => {
-        pool.query("SELECT * FROM todo_items WHERE id=?", [id], (err, rows) => {
-            if (err) return rej(err);
-            acc(
-                rows.map((item) =>
-                    Object.assign({}, item, {
-                        completed: item.completed === 1,
-                    })
-                )[0]
-            );
-        });
-    });
-}
-
-async function storeItem(item) {
-    return new Promise((acc, rej) => {
-        pool.query("INSERT INTO todo_items (id, name, completed) VALUES (?, ?, ?)", [item.id, item.name, item.completed ? 1 : 0], (err) => {
-            if (err) return rej(err);
-            acc();
-        });
-    });
-}
-
-async function updateItem(id, item) {
-    return new Promise((acc, rej) => {
-        pool.query("UPDATE todo_items SET name=?, completed=? WHERE id=?", [item.name, item.completed ? 1 : 0, id], (err) => {
-            if (err) return rej(err);
-            acc();
-        });
-    });
-}
-
-async function removeItem(id) {
-    return new Promise((acc, rej) => {
-        pool.query("DELETE FROM todo_items WHERE id = ?", [id], (err) => {
-            if (err) return rej(err);
-            acc();
-        });
-    });
+    return queryPool(pool, sql, values);
 }
 
 export default {
     init,
     teardown,
-    getItems,
-    getItem,
-    storeItem,
-    updateItem,
-    removeItem,
+    query,
 };

@@ -1,7 +1,5 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 // import "./App.css";
-import ConfirmLogoutModal from "./Components/ConfirmLogoutModal";
-import { AuthContext } from "./AuthContext";
 
 // import Container from "react-bootstrap/Container";
 // import Row from "react-bootstrap/Row";
@@ -27,39 +25,32 @@ import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import CardActionArea from "@mui/material/CardActionArea";
+import { Link } from "react-router";
 
 function App() {
-    const [count, setCount] = useState(0);
-    const [show, setShow] = useState(false);
-    const { isLoggedIn, user, login, logout } = useContext(AuthContext);
     const cards = [
+        // {
+        //     to: "/face",
+        //     title: "Quick Demo",
+        //     text: "Experience a simple setup for face recognition",
+        // },
         {
-            href: "/Face",
-            title: "Quick Demo",
-            text: "Experience a simple setup for face recognition",
+            to: "/dataset",
+            title: "Dataset",
+            text: "Manage faces to train the model",
         },
         {
-            href: "/Dataset",
-            title: "Capture Dataset",
-            text: "Setup faces to train the model",
-        },
-        {
-            href: "/DatasetIndex",
-            title: "View Dataset",
-            text: "Manage captured dataset",
-        },
-        {
-            href: "/Train",
+            to: "/train",
             title: "Train",
             text: "Create your model",
         },
         {
-            href: "/Predict",
+            to: "/predict",
             title: "Predict",
             text: "Run prediction with trained models",
         },
         {
-            href: "/",
+            to: "/",
             title: "Dashboard",
             text: "View reports",
         },
@@ -67,10 +58,13 @@ function App() {
 
     return (
         <>
+            <Typography variant="h3" component="h1" gutterBottom>
+                Welcome to KSTF
+            </Typography>
             <Box sx={{ display: "grid", gap: 2 }}>
                 {cards.map((card, index) => (
                     <Card>
-                        <CardActionArea href={card.href}>
+                        <CardActionArea component={Link} to={card.to}>
                             <CardContent>
                                 <Typography gutterBottom variant="h5" component="div">
                                     {card.title}
@@ -82,35 +76,7 @@ function App() {
                         </CardActionArea>
                     </Card>
                 ))}
-                <div>
-                    <ConfirmLogoutModal props={{ show, setShow, logout }} />
-                    {isLoggedIn ? (
-                        <Button variant="outlined" color="error" onClick={() => setShow(true)} fullWidth>
-                            Logout
-                        </Button>
-                    ) : null}
-                </div>
             </Box>
-            <ul>
-                {/* <li>
-                    <a href="/App">App</a>
-                </li>
-                <li>
-                    <a href="/Menu">Menu</a>
-                </li> */}
-                {/* <li>
-                    <a href="/Face">Face Learning Simple</a>
-                </li>
-                <li>
-                    <a href="/Dataset">Dataset</a>
-                </li>
-                <li>
-                    <a href="/Train">Train</a>
-                </li>
-                <li>
-                    <a href="/Predict">Predict</a>
-                </li> */}
-            </ul>
         </>
     );
 }

@@ -21,7 +21,7 @@ const app = express();
 const port = 5172;
 
 const corsOptions = {
-    origin: ["https://192.168.1.5:5173", "https://ksdedicated.work", "https://api.ksdedicated.work"], // Replace with your actual domain
+    origin: ["http://localhost:5173", "http://192.168.0.187:5173", "https://192.168.1.5:5173", "https://ksdedicated.work", "https://api.ksdedicated.work"], // Replace with your actual domain
 };
 
 app.use(cors(corsOptions));
@@ -54,7 +54,7 @@ app.use("/api/dataset", datasetRouter);
 app.use("/api/train", trainRouter);
 app.use("/api/auth", authRouter);
 app.get("/api/version", (req, res) => {
-    res.send("1.1.1");
+    res.send("1.2.1");
 });
 
 app.use(errorHandler);
@@ -86,7 +86,7 @@ db.init()
 
 const gracefulShutdown = () => {
     db.teardown()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => process.exit());
 };
 

@@ -1,9 +1,7 @@
 import express from "express";
-import fs from "fs";
-import { uuidv4, readFilesSync, readFileBytes } from "../helpers/misc.js";
+import datasetService from "../services/datasetService.js";
 
 const router = express.Router();
-const dirname = "./src/public/dataset";
 // middleware that is specific to this router
 // const timeLog = (req, res, next) => {
 //     console.log("Time: ", Date.now());
@@ -12,46 +10,13 @@ const dirname = "./src/public/dataset";
 // router.use(timeLog);
 
 // define the home page route
-router.get("/", (req, res) => {
-    let files = readFilesSync(dirname);
-    let toReturn = [];
-    const findGroup = (id) => {
-        let found = null;
-        for (const g of toReturn) {
-            if (g.id === id) {
-                found = g;
-                break;
-            }
-        }
-        return found;
-    };
-    for (const file of files) {
-        let s = file.filepath.split("/");
-        let id = s[s.length - 2];
-        let ss = id.split("_");
-        id = ss[0];
-        let name = ss[1];
-        let g = findGroup(id);
-        if (!g) {
-            let newGroup = {
-                id,
-                name,
-                data: [
-                    {
-                        name: file.name,
-                        ext: file.ext,
-                    },
-                ],
-            };
-            toReturn.push(newGroup);
-        } else {
-            g.data.push({
-                name: file.name,
-                ext: file.ext,
-            });
-        }
+router.get("/", (req, res, next) => {
+    try {
+        const groups = datasetService.listDatasetGroups();
+        res.json({ data: groups });
+    } catch (error) {
+        next(error);
     }
-    res.json({ data: toReturn });
     // let files = readFilesSync("./public/dataset");
     // res.json({ data: files });
 });
@@ -67,33 +32,55 @@ router.get("/about", (req, res) => {
 //     });
 // });
 
-router.post("/", (req, res) => {
-    // console.log(req.body);
-    let dd = [];
-    for (const group of req.body.images) {
-        let { id, name, data } = group;
-        let uuid = uuidv4();
-        dd.push({ id, name, uuid });
-        let dir = `${dirname}/${id}_${name}`;
-
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-
-        let idx = data.indexOf(",");
-        let buff = Buffer.from(data.substr(idx), "base64");
-
-        fs.writeFileSync(`${dir}/${name}_${uuid}.png`, buff);
+router.post("/", (req, res, next) => {
+    try {
+        const saved = datasetService.saveDatasetImages(req.body.images || []);
+        res.json({ data: saved });
+    } catch (error) {
+        next(error);
     }
-    res.json({ data: dd });
 });
 
-router.delete("/:folder/:filename", (req, res) => {
-    let dir = `${dirname}/${req.params.folder}/${req.params.filename}`;
-    fs.unlinkSync(dir);
-    res.json({
-        data: "success",
-    });
+router.get("/class/:id", async (req, res, next) => {
+    try {
+        const foundClass = await datasetService.getDatasetClass(req.params.id);
+        res.json({ data: foundClass });
+    } catch (error) {
+        next(error);
+    }
+});
+
+const createClassHandler = (req, res, next) => {
+    try {
+        const created = datasetService.createDatasetClass(req.body?.name);
+        res.json({ ...created, data: created });
+    } catch (error) {
+        next(error);
+    }
+};
+
+router.post("/class", createClassHandler);
+
+router.delete("/:folder", (req, res, next) => {
+    try {
+        datasetService.deleteDatasetClassFolder(req.params.folder);
+        res.json({
+            data: "success",
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.delete("/:folder/:filename", (req, res, next) => {
+    try {
+        datasetService.deleteDatasetClassFile(req.params.folder, req.params.filename);
+        res.json({
+            data: "success",
+        });
+    } catch (error) {
+        next(error);
+    }
 });
 
 export default router;

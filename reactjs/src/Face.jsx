@@ -10,6 +10,7 @@ import "@tensorflow/tfjs-backend-webgl";
 import * as faceDetection from "@tensorflow-models/face-detection";
 import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
+import { Link } from "react-router";
 
 let nextId = 0;
 
@@ -411,7 +412,7 @@ function App() {
 
     return (
         <>
-            <a href="/">Back</a>
+            <Link to="/">Back</Link>
             <div id="facecontainer">
                 <p>{isMobile ? "Mobile" : "PC"}</p>
                 <select
