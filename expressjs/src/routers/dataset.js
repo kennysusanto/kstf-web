@@ -12,7 +12,7 @@ const router = express.Router();
 // define the home page route
 router.get("/", (req, res, next) => {
     try {
-        const groups = datasetService.listDatasetGroups();
+        const groups = datasetService.listDatasetGroups(req.user.tenant_id);
         res.json({ data: groups });
     } catch (error) {
         next(error);
@@ -34,7 +34,7 @@ router.get("/about", (req, res) => {
 
 router.post("/", (req, res, next) => {
     try {
-        const saved = datasetService.saveDatasetImages(req.body.images || []);
+        const saved = datasetService.saveDatasetImages(req.user.tenant_id, req.body.images || []);
         res.json({ data: saved });
     } catch (error) {
         next(error);
@@ -43,7 +43,7 @@ router.post("/", (req, res, next) => {
 
 router.get("/class/:id", async (req, res, next) => {
     try {
-        const foundClass = await datasetService.getDatasetClass(req.params.id);
+        const foundClass = await datasetService.getDatasetClass(req.user.tenant_id, req.params.id);
         res.json({ data: foundClass });
     } catch (error) {
         next(error);
@@ -52,7 +52,7 @@ router.get("/class/:id", async (req, res, next) => {
 
 const createClassHandler = (req, res, next) => {
     try {
-        const created = datasetService.createDatasetClass(req.body?.name);
+        const created = datasetService.createDatasetClass(req.user.tenant_id, req.body?.name);
         res.json({ ...created, data: created });
     } catch (error) {
         next(error);
@@ -63,7 +63,7 @@ router.post("/class", createClassHandler);
 
 router.delete("/:folder", (req, res, next) => {
     try {
-        datasetService.deleteDatasetClassFolder(req.params.folder);
+        datasetService.deleteDatasetClassFolder(req.user.tenant_id, req.params.folder);
         res.json({
             data: "success",
         });
@@ -74,7 +74,7 @@ router.delete("/:folder", (req, res, next) => {
 
 router.delete("/:folder/:filename", (req, res, next) => {
     try {
-        datasetService.deleteDatasetClassFile(req.params.folder, req.params.filename);
+        datasetService.deleteDatasetClassFile(req.user.tenant_id, req.params.folder, req.params.filename);
         res.json({
             data: "success",
         });

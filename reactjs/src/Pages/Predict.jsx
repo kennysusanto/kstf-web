@@ -45,7 +45,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 
-import axios from "axios";
+import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../services/apiUrl.js";
 
@@ -317,7 +317,7 @@ function App() {
     } = useQuery({
         queryKey: ["models"],
         queryFn: async () => {
-            const data = await axios.get(getApiUrl(`/api/train`));
+            const data = await apiClient.get(getApiUrl(`/api/train`));
 
             return data.data.data;
         },
@@ -352,7 +352,7 @@ function App() {
     } = useQuery({
         queryKey: ["classes"],
         queryFn: async () => {
-            const data = await axios.get(getApiUrl(`/api/dataset`));
+            const data = await apiClient.get(getApiUrl(`/api/dataset`));
             let classGroups = data.data.data;
 
             return classGroups;

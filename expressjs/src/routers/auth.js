@@ -1,7 +1,6 @@
 import express from "express";
-import fs from "fs";
-import { uuidv4, readFilesSync, readFilesSync2 } from "../helpers/misc.js";
-import path from "path";
+import { uuidv4 } from "../helpers/misc.js";
+import userRepository from "../repositories/userRepository.js";
 
 const router = express.Router();
 
@@ -18,31 +17,55 @@ router.get("/about", (req, res) => {
     res.json({ message: "About auth" });
 });
 
-router.post("/login", (req, res) => {
-    let correct1 = req.body.username === "admin";
-    let correct2 = req.body.password === "admin";
+router.post("/login", async (req, res, next) => {
+    try {
+        const email = String(req.body?.email || req.body?.username || "").trim().toLowerCase();
+        const password = String(req.body?.password || "");
 
-    let returnObj = {
-        message: "User not found",
-    };
-    if (correct1 && correct2) {
-        returnObj.message = "Login success";
-        returnObj.user = {
-            id: 1,
-            username: req.body.username,
-            role: "super admin",
-        };
-        returnObj.token = "somethinghere";
-    } else if (correct1) {
-        returnObj.message = "Wrong password";
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required",
+            });
+        }
+
+        const user = await userRepository.getUserByEmail(email);
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        if (user.password !== password) {
+            return res.status(401).json({ message: "Wrong password" });
+        }
+
+        const token = uuidv4();
+        await userRepository.updateUserAccessTokenById(user.id, token);
+
+        return res.json({
+            message: "Login success",
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                tenant_id: user.tenant_id,
+            },
+            token,
+        });
+    } catch (error) {
+        return next(error);
     }
-
-    res.json(returnObj);
 });
 
-router.post("/logout", (req, res) => {
-    let message = "Logout success";
-    res.json({ message });
+router.post("/logout", async (req, res, next) => {
+    try {
+        if (req.userId) {
+            await userRepository.updateUserAccessTokenById(req.userId, null);
+        }
+
+        const message = "Logout success";
+        res.json({ message });
+    } catch (error) {
+        next(error);
+    }
 });
 
 export default router;

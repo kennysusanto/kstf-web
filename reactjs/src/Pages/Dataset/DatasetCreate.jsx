@@ -40,7 +40,7 @@ import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 
-import axios from "axios";
+import apiClient from "../../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router";
 import { getApiUrl } from "../../services/apiUrl.js";
@@ -297,7 +297,7 @@ function App() {
     } = useQuery({
         queryKey: ["dataset"],
         queryFn: async () => {
-            const data = await axios.get(getApiUrl(`/api/dataset/class/${selectedClassId}`));
+            const data = await apiClient.get(getApiUrl(`/api/dataset/class/${selectedClassId}`));
             // let classGroups = data.data.data;
             // classGroups = classGroups.map((m) => ({
             //     ...m,
@@ -319,7 +319,7 @@ function App() {
 
     const mutation = useMutation({
         mutationFn: (newData) => {
-            return axios.post(getApiUrl(`/api/dataset`), newData);
+            return apiClient.post(getApiUrl(`/api/dataset`), newData);
         },
     });
 

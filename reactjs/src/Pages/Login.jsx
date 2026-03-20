@@ -21,12 +21,13 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import InputLabel from "@mui/material/InputLabel";
 import InputAdornment from "@mui/material/InputAdornment";
 import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
 import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 
-import axios from "axios";
+import apiClient from "../services/apiClient.js";
 import { AuthContext } from "../context/AuthContext.jsx";
 import { getApiUrl } from "../services/apiUrl.js";
 import "./Login.css";
@@ -34,9 +35,15 @@ import "./Login.css";
 function App() {
     const { login } = useContext(AuthContext);
     const [errorInput, setErrorInput] = useState(false);
+    const [email, setEmail] = useState("");
+    const [emailFormatError, setEmailFormatError] = useState(false);
     const [message, setMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [apiConnected, setApiConnected] = useState(null);
+
+    const validateEmail = (value) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -44,7 +51,7 @@ function App() {
         const checkApiConnection = async () => {
             try {
                 console.log(getApiUrl("/api/version"));
-                await axios.get(getApiUrl("/api/version"), { timeout: 5000 });
+                await apiClient.get(getApiUrl("/api/version"), { timeout: 5000 });
                 if (isMounted) {
                     setApiConnected(true);
                 }
@@ -83,12 +90,19 @@ function App() {
         const formData = new FormData(event.currentTarget);
         const formDataObj = Object.fromEntries(formData.entries());
 
-        if (formDataObj.username == "" || formDataObj.password == "") {
+        if (formDataObj.email == "" || formDataObj.password == "") {
             return;
         }
+
+        if (!validateEmail(formDataObj.email)) {
+            setEmailFormatError(true);
+            return;
+        }
+
         setErrorInput(false);
+        setEmailFormatError(false);
         try {
-            let ress = await axios.post(getApiUrl("/api/auth/login"), formDataObj);
+            let ress = await apiClient.post(getApiUrl("/api/auth/login"), formDataObj);
             if (ress.data) {
                 if (ress.data.user) {
                     login(ress.data.user, ress.data.token);
@@ -97,15 +111,7 @@ function App() {
                 }
             }
         } catch (err) {
-            if (formDataObj.username === "admin" && formDataObj.password === "admin") {
-                login(
-                    {
-                        username: "admin",
-                        password: "admin",
-                    },
-                    "token"
-                );
-            }
+            setMessage(err?.response?.data?.message || "Login failed");
         }
     };
     return (
@@ -129,9 +135,22 @@ function App() {
                         sx={{ alignSelf: "center" }}
                     />
 
-                    <FormControl fullWidth variant="outlined" error={errorInput}>
-                        <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
-                        <OutlinedInput id="outlined-adornment-username" name="username" label="Username" error={errorInput} />
+                    <FormControl fullWidth variant="outlined" error={errorInput || emailFormatError}>
+                        <InputLabel htmlFor="outlined-adornment-email">Email</InputLabel>
+                        <OutlinedInput
+                            id="outlined-adornment-email"
+                            name="email"
+                            type="email"
+                            label="Email"
+                            value={email}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                setEmail(value);
+                                setEmailFormatError(value !== "" && !validateEmail(value));
+                            }}
+                            error={errorInput || emailFormatError}
+                        />
+                        {emailFormatError ? <FormHelperText>Please enter a valid email address</FormHelperText> : null}
                     </FormControl>
 
                     <FormControl fullWidth variant="outlined" error={errorInput}>

@@ -50,7 +50,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 
-import axios from "axios";
+import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../services/apiUrl.js";
 import ImageList from "@mui/material/ImageList";
@@ -96,7 +96,7 @@ function App() {
         setDialogData(null);
         setShowDialog(false);
 
-        await axios.delete(getApiUrl(`/api/train/${dialogData.modelName}_${dialogData.uid}`));
+        await apiClient.delete(getApiUrl(`/api/train/${dialogData.modelName}_${dialogData.uid}`));
         setModels([]);
         const dd = await modelsQuery.refetch();
         setModels(dd.data);
@@ -144,7 +144,7 @@ function App() {
             let pn = `${classGroup.id}_${classGroup.name}/${classGroup.data.name}${classGroup.data.ext}`;
             let url = getApiUrl(`/api/dataset/${pn}`);
             url = encodeURI(url);
-            // let response = await axios.get(url);
+            // let response = await apiClient.get(url);
             // let base64img = response.data;
             // if (!base64img) {
             //     return;
@@ -156,7 +156,7 @@ function App() {
             // let fetchBlob = await fetchRes.blob();
             // let fetchBlob = await base64img.blob();
 
-            let fetchBlob = await axios.get(url, { responseType: "blob" });
+            let fetchBlob = await apiClient.get(url, { responseType: "blob" });
             let bmp = await createImageBitmap(fetchBlob.data);
             const canvas = document.createElement('canvas');
             let imageTensor = tf.tidy(function () {
@@ -297,7 +297,7 @@ function App() {
         for (const r of resp.responses) {
             r.json().then(async (rr) => {
                 console.log(rr);
-                let respRename = await axios.post(getApiUrl(`/api/train/rename`), {
+                let respRename = await apiClient.post(getApiUrl(`/api/train/rename`), {
                     oldName: rr.data.uuid,
                     newName: newName,
                 });
@@ -306,7 +306,7 @@ function App() {
         }
 
         setModelName("");
-        // axios.post("http://localhost:5172/api/train", { name: "unique", data: combinedModel });
+        // apiClient.post("http://localhost:5172/api/train", { name: "unique", data: combinedModel });
 
         // predictLoop();
         setTrainingComplete(true);
@@ -319,7 +319,7 @@ function App() {
     };
 
     const fetchQuery = async () => {
-        const data = await axios.get(getApiUrl(`/api/dataset`));
+        const data = await apiClient.get(getApiUrl(`/api/dataset`));
         let classGroups = data.data.data;
         // setSamples([]);
         for (const g of classGroups) {
@@ -351,7 +351,7 @@ function App() {
     const modelsQuery = useQuery({
         queryKey: ["models"],
         queryFn: async () => {
-            const data = await axios.get(getApiUrl(`/api/train`));
+            const data = await apiClient.get(getApiUrl(`/api/train`));
 
             setModels(data.data.data);
 

@@ -45,7 +45,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-import axios from "axios";
+import apiClient from "../../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../../services/apiUrl.js";
 import { Link } from "react-router";
@@ -117,7 +117,7 @@ function App() {
         setDialogData(null);
         setShowDialog(false);
 
-        await axios.delete(getApiUrl(`/api/dataset/${dialogData.folder}/${dialogData.filename}`));
+        await apiClient.delete(getApiUrl(`/api/dataset/${dialogData.folder}/${dialogData.filename}`));
         setClasses([]);
         const dd = await refetch();
         let classGroups = dd.data;
@@ -143,7 +143,7 @@ function App() {
             return;
         }
 
-        await axios.delete(getApiUrl(`/api/dataset/${classToDelete.id}_${classToDelete.name}`));
+        await apiClient.delete(getApiUrl(`/api/dataset/${classToDelete.id}_${classToDelete.name}`));
         const dd = await refetch();
         let classGroups = dd.data;
         classGroups = classGroups.map((m) => ({
@@ -380,7 +380,7 @@ function App() {
     } = useQuery({
         queryKey: ["dataset"],
         queryFn: async () => {
-            const data = await axios.get(getApiUrl(`/api/dataset`));
+            const data = await apiClient.get(getApiUrl(`/api/dataset`));
             let classGroups = data.data.data;
             classGroups = classGroups.map((m) => ({
                 ...m,
@@ -406,13 +406,13 @@ function App() {
 
     const mutation = useMutation({
         mutationFn: (newData) => {
-            return axios.post(getApiUrl(`/api/dataset`), newData);
+            return apiClient.post(getApiUrl(`/api/dataset`), newData);
         },
     });
 
     const addClassMutation = useMutation({
         mutationFn: (payload) => {
-            return axios.post(getApiUrl(`/api/dataset/class`), payload);
+            return apiClient.post(getApiUrl(`/api/dataset/class`), payload);
         },
         onSuccess: (response, variables) => {
             const newClass = {

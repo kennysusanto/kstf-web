@@ -9,7 +9,14 @@ function splitPathParts(filepath) {
     return filepath.split(/[\\/]/);
 }
 
-function listDatasetGroups() {
+function listDatasetGroups(tenantID) {
+    
+    (async() => {
+        await datasetClassRepository.doesTableExist(tenantID);
+        await datasetImageRepository.doesTableExist(tenantID);
+
+    })();
+
     const files = readFilesSync(dirname);
     const groups = [];
 
@@ -60,7 +67,7 @@ function listDatasetGroups() {
     return groups;
 }
 
-function saveDatasetImages(images = []) {
+function saveDatasetImages(tenantID, images = []) {
     const saved = [];
 
     for (const group of images) {
@@ -79,17 +86,17 @@ function saveDatasetImages(images = []) {
 
         fs.writeFileSync(`${dir}/${name}_${imageId}.png`, buffer);
 
-        datasetImageRepository.insertDatasetImage({ id: imageId, dataset_class_id: id, path: `${dir}/${name}_${imageId}.png`, created_at: new Date(), updated_at: new Date(), deleted_at: null });
+        datasetImageRepository.insertDatasetImage(tenantID, { id: imageId, dataset_class_id: id, path: `${dir}/${name}_${imageId}.png`, created_at: new Date(), updated_at: new Date(), deleted_at: null });
     }
 
     return saved;
 }
 
-function getDatasetClass(id) {
-    return datasetClassRepository.getDatasetClassById(id);
+function getDatasetClass(tenantID, id) {
+    return datasetClassRepository.getDatasetClassById(tenantID, id);
 }
 
-function createDatasetClass(name) {
+function createDatasetClass(tenantID, name) {
     const trimmedName = String(name || "").trim();
 
     if (!trimmedName) {
@@ -101,7 +108,7 @@ function createDatasetClass(name) {
     const id = uuidv4();
     const dir = `${dirname}/${id}_${trimmedName}`;
 
-    datasetClassRepository.insertDatasetClass({ id, name: trimmedName, created_at: new Date(), updated_at: new Date(), deleted_at: null });
+    datasetClassRepository.insertDatasetClass(tenantID, { id, name: trimmedName, created_at: new Date(), updated_at: new Date(), deleted_at: null });
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -114,24 +121,24 @@ function createDatasetClass(name) {
     };
 }
 
-function deleteDatasetClassFile(folder, filename) {
+function deleteDatasetClassFile(tenantID, folder, filename) {
     const filePath = `${dirname}/${folder}/${filename}`;
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
 
     let id = filename.split("_")[1].replaceAll(".png", "");
-    datasetImageRepository.deleteDatasetImageById(id);
+    datasetImageRepository.deleteDatasetImageById(tenantID, id);
 }
 
-function deleteDatasetClassFolder(folder) {
+function deleteDatasetClassFolder(tenantID, folder) {
     const folderPath = `${dirname}/${folder}`;
     if (fs.existsSync(folderPath)) {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }
 
     let id = folder.split("_")[0];
-    datasetClassRepository.deleteDatasetClassById(id);
+    datasetClassRepository.deleteDatasetClassById(tenantID, id);
 }
 
 export default {

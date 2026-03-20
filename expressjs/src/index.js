@@ -6,12 +6,15 @@ import birdsRouter from "./routers/birds.js";
 import datasetRouter from "./routers/dataset.js";
 import trainRouter from "./routers/train.js";
 import authRouter from "./routers/auth.js";
+import tenantRouter from "./routers/tenant.js";
+import userRouter from "./routers/user.js";
 import moment from "moment";
 import path from "path";
 import http from "http";
 import https from "https";
 import fs from "fs";
 import db from "./persistence/index.js";
+import authContext from "./middleware/authContext.js";
 
 // const privateKey = fs.readFileSync("./cloudflare-private-key.pem", "utf8");
 // const certificate = fs.readFileSync("./cloudflare-origin-cert.pem", "utf8");
@@ -55,14 +58,18 @@ app.get("/api", (req, res) => {
     res.send("Hello World!");
 });
 
+app.use("/api/auth", authRouter);
+
 // app.options("*", cors());
 app.use("/api/birds", birdsRouter);
-app.use("/api/dataset", datasetRouter);
-app.use("/api/train", trainRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/dataset", authContext, datasetRouter);
+app.use("/api/train", authContext, trainRouter);
+app.use("/api/tenant", authContext, tenantRouter);
+app.use("/api/user", authContext, userRouter);
 app.get("/api/version", (req, res) => {
     res.send("1.2.1");
 });
+
 
 app.use(errorHandler);
 
