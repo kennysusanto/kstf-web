@@ -9,13 +9,57 @@ function splitPathParts(filepath) {
     return filepath.split(/[\\/]/);
 }
 
-function listDatasetGroups(tenantID) {
+async function listDatasetImagesDB(tenantID) {
+    await datasetClassRepository.doesTableExist(tenantID);
+    await datasetImageRepository.doesTableExist(tenantID);
     
-    (async() => {
-        await datasetClassRepository.doesTableExist(tenantID);
-        await datasetImageRepository.doesTableExist(tenantID);
+    let datasetClasses = await datasetClassRepository.getDatasetClasses(tenantID);
+    let datasetImages = await datasetImageRepository.getDatasetImages(tenantID);
 
-    })();
+    const groups = [];
+
+    const findGroup = (id) => {
+        for (const group of groups) {
+            if (group.id === id) {
+                return group;
+            }
+        }
+
+        return null;
+    };
+
+    for (const cls of datasetClasses) {
+        groups.push({ id: cls.id, name: cls.name, data: [] });
+    }
+
+    for (const img of datasetImages) {
+        const parts = splitPathParts(img.path);
+        let folder = parts[parts.length - 2] || "";
+        const folderParts = folder.split("_");
+        const datasetClassID = folderParts[0];
+        const datasetClassName = folderParts.slice(1).join("_");
+        const fullFileName = parts[parts.length - 1] || "";
+        const fileParts = fullFileName.split("_");
+        const fileID = fileParts[1].split(".")[0];
+        const fileExt = fullFileName.split(".")[1];
+
+        const group = findGroup(datasetClassID);
+        const item = {
+            id: fileID,
+            name: fullFileName,
+            ext: fileExt,
+        };
+        if (group) {
+            group.data.push(item);
+        }
+    }
+
+    return groups;
+}
+
+async function listDatasetImagesFiles(tenantID) {
+    await datasetClassRepository.doesTableExist(tenantID);
+    await datasetImageRepository.doesTableExist(tenantID);
 
     const files = readFilesSync(dirname);
     const groups = [];
@@ -49,13 +93,13 @@ function listDatasetGroups(tenantID) {
             const folderParts = folder.split("_");
             const id = folderParts[0];
             const name = folderParts.slice(1).join("_");
-    
+
             const group = findGroup(id);
             const item = {
                 name: file.name,
                 ext: file.ext,
             };
-    
+
             if (!group) {
                 groups.push({ id, name, data: [item] });
             } else {
@@ -142,7 +186,8 @@ function deleteDatasetClassFolder(tenantID, folder) {
 }
 
 export default {
-    listDatasetGroups,
+    listDatasetImagesDB,
+    listDatasetImagesFiles,
     saveDatasetImages,
     createDatasetClass,
     deleteDatasetClassFile,

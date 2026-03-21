@@ -117,3 +117,12 @@ Frontend runs on `http://localhost:5173`.
 - `npm run build` - production build
 - `npm run preview` - preview build
 - `npm run build-dev` - build and copy dist to backend static folder
+
+
+## Todo
+
+- [x] DB storage login and dataset
+- [ ] Tenant level separation for login and dataset
+- [x] Optimization API requests on Dataset, Train, Predict pages
+- [ ] Training data augmentation feature (rotation and blur variants)
+- [ ] Update uiux

@@ -148,24 +148,12 @@ function App() {
 
     const processImage = async (classGroup) => {
         try {
-            let pn = `${classGroup.id}_${classGroup.name}/${classGroup.data.name}${classGroup.data.ext}`;
-            let url = getApiUrl(`/api/dataset/${pn}`);
+            let url = getApiUrl(`/api/dataset/${classGroup.datasetClassID}_${classGroup.datasetClassName}/${classGroup.datasetImageName}`);
             url = encodeURI(url);
-            // let response = await apiClient.get(url);
-            // let base64img = response.data;
-            // if (!base64img) {
-            //     return;
-            // }
-            // if (mobileNetBase === undefined) {
-            //     console.log("Mobile net base is undefined");
-            // }
-            // let fetchRes = await fetch(base64img);
-            // let fetchBlob = await fetchRes.blob();
-            // let fetchBlob = await base64img.blob();
 
             let fetchBlob = await apiClient.get(url, { responseType: "blob" });
             let bmp = await createImageBitmap(fetchBlob.data);
-            const canvas = document.createElement('canvas');
+            // const canvas = document.createElement('canvas');
             let imageTensor = tf.tidy(function () {
                 // read file bytes
                 let videoFrameAsTensor = tf.browser.fromPixels(bmp);
@@ -201,9 +189,12 @@ function App() {
             classesTensorLabels.push(classGroup.id);
             // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
             let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
-            if (dataCount > highestDataCount) {
-                setHighestDataCount(dataCount);
-            }
+            setHighestDataCount((prevHighestDataCount) => {
+                if (dataCount > prevHighestDataCount) {
+                    return dataCount;
+                }
+                return prevHighestDataCount;
+            });
         } catch (err) {
             console.error(err);
         }
@@ -243,7 +234,7 @@ function App() {
             setTrainingComplete(false);
             let model = tf.sequential();
             model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
-            model.add(tf.layers.dense({ units: dataset.length, activation: "softmax" }));
+            model.add(tf.layers.dense({ units: datasetImages.length, activation: "softmax" }));
 
             model.summary();
 
@@ -253,7 +244,7 @@ function App() {
                 optimizer: "adam",
                 // Use the correct loss function. If 2 classes of data, must use binaryCrossentropy.
                 // Else categoricalCrossentropy is used if more than 2 classes.
-                loss: dataset.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
+                loss: datasetImages.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
                 // As this is a classification problem you can record accuracy in the logs too!
                 metrics: ["accuracy"],
             });
@@ -263,10 +254,10 @@ function App() {
 
             // console.log("dataset", dataset);
             // console.log("trainingDataOutputs", trainingDataOutputs);
-            const indices = trainingDataOutputs.map(classID => dataset.indexOf(dataset.find(m => m.id == classID)));
+            const indices = trainingDataOutputs.map(classID => datasetImages.indexOf(datasetImages.find(m => m.id == classID)));
             const outputsAsTensor = tf.tensor1d(indices, 'int32');
             // let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
-            let oneHotOutputs = tf.oneHot(outputsAsTensor, dataset.length);
+            let oneHotOutputs = tf.oneHot(outputsAsTensor, datasetImages.length);
             let inputsAsTensor = tf.stack(trainingDataInputs);
 
             // console.log("outputsAsTensor", await outputsAsTensor.data());
@@ -341,13 +332,15 @@ function App() {
         for (const g of classGroups) {
             g.count = g.data.length;
             for (const file of g.data) {
-                let id = g.id;
-                let name = g.name;
+                // let id = g.id;
+                // let name = file.name;
 
                 await processImage({
-                    id,
-                    name,
-                    data: file,
+                    id: g.id,
+                    datasetClassID: g.id,
+                    datasetClassName: g.name,
+                    datasetImageName: file.name,
+                    // data: file,
                 });
             }
         }
@@ -357,7 +350,7 @@ function App() {
 
     const {
         status,
-        data: dataset,
+        data: datasetImages,
         error,
     } = useQuery({
         queryKey: ["dataset"],
@@ -410,7 +403,7 @@ function App() {
                                                 {status === "pending" ? <span>Loading...</span> : null}
                                                 {status === "success" ? (
                                                     <Grid container spacing={2}>
-                                                        {dataset.map((d, index) => (
+                                                        {datasetImages.map((d, index) => (
                                                             <Grid key={index}>
                                                                 <Button key={d.id} variant="outlined" disabled>
                                                                     {d.name} ({d.count})
@@ -422,7 +415,7 @@ function App() {
                                             </div>
                                         </Grid>
                                         <Grid size={12}>
-                                            {dataset !== undefined ? (
+                                            {datasetImages !== undefined ? (
                                                 <Grid container columns={12} spacing={2}>
                                                     <Grid size={12}>
                                                         <TextField
@@ -454,7 +447,7 @@ function App() {
                                                             variant="contained"
                                                             color="success"
                                                             disabled={
-                                                                isModelNameEmpty || highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
+                                                                isModelNameEmpty || highestDataCount == 0 || datasetImages.length == 0 || !datasetImages.every((m) => m.count == highestDataCount)
                                                             }
                                                             title="Data count needs to be the same across all class"
                                                             onClick={() => {
@@ -467,13 +460,13 @@ function App() {
                                                             }}
                                                             fullWidth
                                                         >
-                                                            Train {modelName} on {dataset.length} classes
+                                                            Train {modelName} on {datasetImages.length} classes
                                                         </Button>
                                                     </Grid>
                                                     {/* <Grid size={12}>
                                                         <span>Highest data count: {highestDataCount}</span>
                                                     </Grid> */}
-                                                    {dataset.every((m) => m.count == highestDataCount) ? null :
+                                                    {datasetImages.every((m) => m.count == highestDataCount) ? null :
                                                         <Grid size={12}>
                                                             <Typography color={"error"}>
                                                                 Data count needs to be the same across all classes to start training. Please add more data to the classes with less data.

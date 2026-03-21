@@ -78,7 +78,7 @@ function App() {
 
     const [browserWidth, setBrowserWidth] = useState(window.innerWidth);
     const [className, setClassName] = useState("");
-    const [classes, setClasses] = useState([]);
+    const [datasetClasses, setDatasetClasses] = useState([]);
     // const [classesTensors, setClassesTensors] = useState([]);
     // const [classesTensorLabels, setClassesTensorLabels] = useState([]);
     // const [highestDataCount, setHighestDataCount] = useState(0);
@@ -118,7 +118,7 @@ function App() {
         setShowDialog(false);
 
         await apiClient.delete(getApiUrl(`/api/dataset/${dialogData.folder}/${dialogData.filename}`));
-        setClasses([]);
+        setDatasetClasses([]);
         const dd = await refetch();
         let classGroups = dd.data;
         classGroups = classGroups.map((m) => ({
@@ -134,7 +134,7 @@ function App() {
             }
             temp.push(g);
         }
-        setClasses(temp);
+        setDatasetClasses(temp);
     };
 
     const handleDeleteClass = async () => {
@@ -158,7 +158,7 @@ function App() {
             }
             temp.push(g);
         }
-        setClasses(temp);
+        setDatasetClasses(temp);
         textToast("Class deleted");
         handleCloseDeleteClassDialog();
     };
@@ -340,18 +340,18 @@ function App() {
 
     const generateId = () => {
         let newId = uuidv4();
-        if (classes != undefined && classes.length > 0) {
-            let conflict = classes.some((m) => m.id === newId);
+        if (datasetClasses != undefined && datasetClasses.length > 0) {
+            let conflict = datasetClasses.some((m) => m.id === newId);
             while (conflict) {
                 newId = uuidv4();
-                conflict = classes.some((m) => m.id === newId);
+                conflict = datasetClasses.some((m) => m.id === newId);
             }
         }
-        if (dataset != undefined && dataset.length > 0) {
-            let conflict = dataset.some((m) => m.id == newId);
+        if (datasetImages != undefined && datasetImages.length > 0) {
+            let conflict = datasetImages.some((m) => m.id == newId);
             while (conflict) {
                 newId = uuidv4();
-                conflict = dataset.some((m) => m.id === newId);
+                conflict = datasetImages.some((m) => m.id === newId);
             }
         }
         return newId;
@@ -372,7 +372,7 @@ function App() {
 
     const {
         status,
-        data: dataset,
+        data: datasetImages,
         error,
         isFetching,
         refetch,
@@ -389,10 +389,10 @@ function App() {
 
             // sync to local array
             for (const g of classGroups) {
-                if (classes.find((m) => m.id === g.id)) {
+                if (datasetClasses.find((m) => m.id === g.id)) {
                     continue;
                 }
-                classes.push(g);
+                datasetClasses.push(g);
             }
 
             return classGroups;
@@ -457,10 +457,10 @@ function App() {
     //     setDataChanged(false);
     // };
 
-    const getImageUrl = (classId, className, fileName, ext) => {
+    const getImageUrl = (classId, className, fileName) => {
         const apiVersion = "v1";
         const resourceId = "item-456";
-        const endpoint = `/api/dataset/${classId}_${className}/${fileName}${ext}`;
+        const endpoint = `/api/dataset/${classId}_${className}/${fileName}`;
         const fullUrl = getApiUrl(endpoint);
         // console.log(fullUrl);
         return fullUrl;
@@ -494,12 +494,12 @@ function App() {
                                 </Grid>
                                 <Grid size={12}>
                                     <Grid container spacing={2}>
-                                        {classes.length == 0 ? (
+                                        {datasetClasses.length == 0 ? (
                                             <Grid size={12}>
                                                 <Typography variant="body1">No classes yet. Please add a class.</Typography>
                                             </Grid>
                                         ) : (
-                                            classes.map((classGroup) => (
+                                            datasetClasses.map((classGroup) => (
                                                 <Grid key={classGroup.id} size={12}>
                                                     <Card variant="outlined">
                                                         <CardContent>
@@ -531,15 +531,15 @@ function App() {
                                                                                         classId: classGroup.id,
                                                                                         ...item,
                                                                                         folder: `${classGroup.id}_${classGroup.name}`,
-                                                                                        filename: `${item.name}${item.ext}`,
-                                                                                        url: getImageUrl(classGroup.id, classGroup.name, item.name, item.ext),
+                                                                                        filename: `${item.name}`,
+                                                                                        url: getImageUrl(classGroup.id, classGroup.name, item.name),
                                                                                     });
                                                                                     setShowDialog(true);
                                                                                 }}
                                                                             >
                                                                                 <img
-                                                                                    srcSet={getImageUrl(classGroup.id, classGroup.name, item.name, item.ext)}
-                                                                                    src={getImageUrl(classGroup.id, classGroup.name, item.name, item.ext)}
+                                                                                    srcSet={getImageUrl(classGroup.id, classGroup.name, item.name)}
+                                                                                    src={getImageUrl(classGroup.id, classGroup.name, item.name)}
                                                                                     alt={item.name}
                                                                                     loading="lazy"
                                                                                 />
