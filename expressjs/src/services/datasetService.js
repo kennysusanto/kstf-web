@@ -2,6 +2,7 @@ import fs from "fs";
 import { uuidv4, readFilesSync } from "../helpers/misc.js";
 import datasetImageRepository from "../repositories/datasetImageRepository.js";
 import datasetClassRepository from "../repositories/datasetClassRepository.js";
+import tenantRepository from "../repositories/tenantRepository.js";
 
 const dirname = "./src/public/dataset";
 
@@ -111,14 +112,21 @@ async function listDatasetImagesFiles(tenantID) {
     return groups;
 }
 
-function saveDatasetImages(tenantID, images = []) {
+async function saveDatasetImages(tenantID, images = []) {
     const saved = [];
 
+    let tenant = await tenantRepository.getTenantById(tenantID);
+    if (!tenant) {
+        const error = new Error("Tenant not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
     for (const group of images) {
-        const { id, name, data } = group;
+        const { id: datasetClassID, name: datasetClassName, data } = group;
         const imageId = uuidv4();
-        saved.push({ id, name, uuid: imageId });
-        const dir = `${dirname}/${id}_${name}`;
+        saved.push({ id: datasetClassID, name: datasetClassName, uuid: imageId });
+        const dir = `${dirname}/${tenant.id}_${tenant.name}/${datasetClassID}_${datasetClassName}`;
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -128,9 +136,9 @@ function saveDatasetImages(tenantID, images = []) {
         const payload = dataIndex >= 0 ? data.substring(dataIndex + 1) : data;
         const buffer = Buffer.from(payload, "base64");
 
-        fs.writeFileSync(`${dir}/${name}_${imageId}.png`, buffer);
+        fs.writeFileSync(`${dir}/${datasetClassName}_${imageId}.png`, buffer);
 
-        datasetImageRepository.insertDatasetImage(tenantID, { id: imageId, dataset_class_id: id, path: `${dir}/${name}_${imageId}.png`, created_at: new Date(), updated_at: new Date(), deleted_at: null });
+        datasetImageRepository.insertDatasetImage(tenantID, { id: imageId, dataset_class_id: datasetClassID, path: `${dir}/${datasetClassName}_${imageId}.png`, created_at: new Date(), updated_at: new Date(), deleted_at: null });
     }
 
     return saved;
@@ -140,7 +148,7 @@ function getDatasetClass(tenantID, id) {
     return datasetClassRepository.getDatasetClassById(tenantID, id);
 }
 
-function createDatasetClass(tenantID, name) {
+async function createDatasetClass(tenantID, name) {
     const trimmedName = String(name || "").trim();
 
     if (!trimmedName) {
@@ -149,8 +157,15 @@ function createDatasetClass(tenantID, name) {
         throw error;
     }
 
+    let tenant = await tenantRepository.getTenantById(tenantID);
+    if (!tenant) {
+        const error = new Error("Tenant not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
     const id = uuidv4();
-    const dir = `${dirname}/${id}_${trimmedName}`;
+    const dir = `${dirname}/${tenant.id}_${tenant.name}/${id}_${trimmedName}`;
 
     datasetClassRepository.insertDatasetClass(tenantID, { id, name: trimmedName, created_at: new Date(), updated_at: new Date(), deleted_at: null });
 
@@ -165,8 +180,14 @@ function createDatasetClass(tenantID, name) {
     };
 }
 
-function deleteDatasetClassFile(tenantID, folder, filename) {
-    const filePath = `${dirname}/${folder}/${filename}`;
+async function deleteDatasetClassFile(tenantID, folder, filename) {
+    let tenant = await tenantRepository.getTenantById(tenantID);
+    if (!tenant) {
+        const error = new Error("Tenant not found");
+        error.statusCode = 404;
+        throw error;
+    }
+    const filePath = `${dirname}/${tenant.id}_${tenant.name}/${folder}/${filename}`;
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
@@ -175,8 +196,14 @@ function deleteDatasetClassFile(tenantID, folder, filename) {
     datasetImageRepository.deleteDatasetImageById(tenantID, id);
 }
 
-function deleteDatasetClassFolder(tenantID, folder) {
-    const folderPath = `${dirname}/${folder}`;
+async function deleteDatasetClassFolder(tenantID, folder) {
+    let tenant = await tenantRepository.getTenantById(tenantID);
+    if (!tenant) {
+        const error = new Error("Tenant not found");
+        error.statusCode = 404;
+        throw error;
+    }
+    const folderPath = `${dirname}/${tenant.id}_${tenant.name}/${folder}`;
     if (fs.existsSync(folderPath)) {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }

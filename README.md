@@ -126,3 +126,4 @@ Frontend runs on `http://localhost:5173`.
 - [x] Optimization API requests on Dataset, Train, Predict pages
 - [ ] Training data augmentation feature (rotation and blur variants)
 - [ ] Update uiux
+- [ ] Caching dataset in Train page

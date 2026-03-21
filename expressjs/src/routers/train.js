@@ -1,8 +1,7 @@
 import express from "express";
-import fs from "fs";
-import { uuidv4, readFilesSync, readFilesSync2 } from "../helpers/misc.js";
 import multer from "multer";
-import path from "path";
+import { uuidv4 } from "../helpers/misc.js";
+import trainService from "../services/trainService.js";
 
 const dirname = "./src/public/model";
 const storage = multer.diskStorage({
@@ -22,178 +21,42 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const router = express.Router();
 
-// middleware that is specific to this router
-// const timeLog = (req, res, next) => {
-//     console.log("Time: ", Date.now());
-//     next();
-// };
-// router.use(timeLog);
-
-// define the home page route
-router.get("/", (req, res, next) => {
-    let toReturn = [];
-    let files = readFilesSync(dirname);
-    const findGroup = (uid) => {
-        let found = null;
-        for (const g of toReturn) {
-            if (g.uid === uid) {
-                found = g;
-                break;
-            }
-        }
-        return found;
-    };
-    for (const file of files) {
-        if (file.type === "folder") continue;
-        let s = file.filepath.split("\\");
-        let folder = s[s.length - 2];
-        let uid = folder.split("_")[1];
-        let modelName = folder.split("_")[0];
-        let g = findGroup(uid);
-        if (!g) {
-            let newGroup = {
-                uid,
-                modelName,
-            };
-            if (file.ext === ".json") {
-                newGroup.model = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            } else if (file.ext === ".bin") {
-                newGroup.weights = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            }
-            toReturn.push(newGroup);
-        } else {
-            if (file.ext === ".json") {
-                g.model = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            } else if (file.ext === ".bin") {
-                g.weights = {
-                    uid,
-                    name: file.name,
-                    ext: file.ext,
-                };
-            }
-        }
+router.get("/", async (req, res, next) => {
+    try {
+        const models = await trainService.listModels(req.user.tenant_id);
+        res.json({ data: models });
+    } catch (error) {
+        next(error);
     }
-    res.json({ data: toReturn });
-});
-// define the about route
-router.get("/about", (req, res) => {
-    res.json({ message: "About train" });
 });
 
-// router.get("/:modelname", (req, res) => {
-//     let bytes = readFileBytes(`${dirname}/${req.params.class}/${req.params.filename}`);
-//     res.json({
-//         data: bytes,
-//     });
-// });
-
-router.post("/", upload.any(), (req, res) => {
-    // console.log(req.body);
-    // let a = req.body;
-    // console.log(a);
-    // console.log(req.files);
-    /*
-    [
-  {
-    fieldname: 'model.json',
-    originalname: 'model.json',
-    encoding: '7bit',
-    mimetype: 'application/json',
-    destination: './public/model/',
-    filename: '7194a24b0ac5bb6de6bc1ca8e8428bcc',
-    path: 'public\\model\\7194a24b0ac5bb6de6bc1ca8e8428bcc',
-    size: 91943
-  },
-  {
-    fieldname: 'model.weights.bin',
-    originalname: 'model.weights.bin',
-    encoding: '7bit',
-    mimetype: 'application/octet-stream',
-    destination: './public/model/',
-    filename: '6e86570c6d2c9973e5f4dc87b2e262d3',
-    path: 'public\\model\\6e86570c6d2c9973e5f4dc87b2e262d3',
-    size: 9360392
-  }
-]
-  */
-    // let model = req.body.model;
-    let uuid = uuidv4();
-    // let dir = `./public/model/${model.name}_${uuid}`;
-
-    let createdfolder = fs.mkdirSync(dirname, { recursive: true });
-    // console.log("createdfolder", createdfolder);
-
-    // console.log(model);
-    let filesToReturn = [];
-    for (const file of req.files) {
-        let fn = file.filename;
-        // console.log("trace", "dirname", dirname, "fn", fn);
-        let p = path.resolve(dirname, fn);
-        // console.log("trace", p, "dirname", dirname, "fn", fn);
-
-        if (fs.existsSync(p)) {
-            let newFolderPath = path.resolve(dirname, uuid);
-            fs.mkdirSync(newFolderPath, { recursive: true });
-            let newPath = path.resolve(newFolderPath, file.originalname);
-            fs.renameSync(p, newPath);
-            filesToReturn.push({
-                //path: newPath,
-                filename: file.originalname,
-            });
-        }
+router.post("/", upload.any(), async (req, res, next) => {
+    try {
+        const saved = await trainService.saveModelFiles(req.files || []);
+        res.json({ data: saved });
+    } catch (error) {
+        next(error);
     }
-
-    // if (!fs.existsSync(dir)) {
-    // fs.mkdirSync(dir, { recursive: true });
-    // }
-
-    // let buff = Buffer.from(model, "base64");
-
-    // fs.writeFileSync(`${dir}/${name}_${uuid}.png`, buff);
-    res.json({
-        data: {
-            uuid,
-            files: filesToReturn,
-        },
-    });
 });
 
-router.post("/rename", (req, res) => {
-    let oldName = req.body.oldName;
-    let newName = req.body.newName;
-    let message = "success";
-
-    let p = path.resolve(dirname, oldName);
-    if (fs.existsSync(p)) {
-        let newPath = path.resolve(dirname, newName + "_" + oldName);
-        fs.renameSync(p, newPath);
-    } else {
-        message = "File not found!";
+router.post("/rename", async (req, res, next) => {
+    try {
+        const renamed = await trainService.renameModel(req.user.tenant_id, req.body.oldName, req.body.newName);
+        res.json(renamed);
+    } catch (error) {
+        next(error);
     }
-
-    res.json({
-        message,
-    });
 });
 
-router.delete("/:folder", (req, res) => {
-    let dir = `${dirname}/${req.params.folder}`;
-    fs.rmSync(dir, { recursive: true, force: true });
-    res.json({
-        data: "success",
-    });
+router.delete("/:folder", async (req, res, next) => {
+    try {
+        await trainService.deleteModel(req.user.tenant_id, req.params.folder);
+        res.json({
+            data: "success",
+        });
+    } catch (error) {
+        next(error);
+    }
 });
 
 export default router;

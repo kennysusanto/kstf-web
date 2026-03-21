@@ -1,6 +1,7 @@
 import express from "express";
 import { uuidv4 } from "../helpers/misc.js";
 import userRepository from "../repositories/userRepository.js";
+import tenantRepository from "../repositories/tenantRepository.js";
 
 const router = express.Router();
 
@@ -40,6 +41,8 @@ router.post("/login", async (req, res, next) => {
         const token = uuidv4();
         await userRepository.updateUserAccessTokenById(user.id, token);
 
+        let tenant = await tenantRepository.getTenantById(user.tenant_id);
+
         return res.json({
             message: "Login success",
             user: {
@@ -47,6 +50,7 @@ router.post("/login", async (req, res, next) => {
                 name: user.name,
                 email: user.email,
                 tenant_id: user.tenant_id,
+                tenant_name: tenant?.name || ""
             },
             token,
         });

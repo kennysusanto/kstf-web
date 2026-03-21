@@ -30,27 +30,27 @@ router.get("/class/:id", async (req, res, next) => {
     }
 });
 
-router.post("/", (req, res, next) => {
+router.post("/", async (req, res, next) => {
     try {
-        const saved = datasetService.saveDatasetImages(req.user.tenant_id, req.body.images || []);
+        const saved = await datasetService.saveDatasetImages(req.user.tenant_id, req.body.images || []);
         res.json({ data: saved });
     } catch (error) {
         next(error);
     }
 });
 
-router.post("/class", (req, res, next) => {
+router.post("/class", async (req, res, next) => {
     try {
-        const created = datasetService.createDatasetClass(req.user.tenant_id, req.body?.name);
+        const created = await datasetService.createDatasetClass(req.user.tenant_id, req.body?.name);
         res.json({ ...created, data: created });
     } catch (error) {
         next(error);
     }
 });
 
-router.delete("/:folder", (req, res, next) => {
+router.delete("/:folder", async (req, res, next) => {
     try {
-        datasetService.deleteDatasetClassFolder(req.user.tenant_id, req.params.folder);
+        await datasetService.deleteDatasetClassFolder(req.user.tenant_id, req.params.folder);
         res.json({
             data: "success",
         });
@@ -59,9 +59,9 @@ router.delete("/:folder", (req, res, next) => {
     }
 });
 
-router.delete("/:folder/:filename", (req, res, next) => {
+router.delete("/:folder/:filename", async (req, res, next) => {
     try {
-        datasetService.deleteDatasetClassFile(req.user.tenant_id, req.params.folder, req.params.filename);
+        await datasetService.deleteDatasetClassFile(req.user.tenant_id, req.params.folder, req.params.filename);
         res.json({
             data: "success",
         });

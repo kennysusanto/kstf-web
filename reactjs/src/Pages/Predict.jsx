@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useEffect } from "react";
+import { Fragment, useState, useContext, useRef, useEffect } from "react";
 
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
@@ -48,10 +48,12 @@ import Typography from "@mui/material/Typography";
 import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../services/apiUrl.js";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 let nextId = 0;
 
 function App() {
+    const { user } = useContext(AuthContext);
     const camera = useRef(null);
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
@@ -331,9 +333,11 @@ function App() {
         if (modelValue === "") {
             return;
         }
-        console.log("Loading model value", getApiUrl(`/api/model/${modelValue}/model.json`));
+        let tenantID = user?.tenant_id;
+        let tenantName = user?.tenant_name;
+        console.log("Loading model value", getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
         (async () => {
-            const model = await tf.loadLayersModel(getApiUrl(`/api/model/${modelValue}/model.json`));
+            const model = await tf.loadLayersModel(getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
             model.summary();
             setUseModel(model);
 
@@ -473,18 +477,18 @@ function App() {
                                     {status === "pending" ? <span>Loading...</span> : null}
                                     {status === "success"
                                         ? models.map((m, index) => (
-                                            <Fragment key={m.uid}>
+                                            <Fragment key={m.id}>
                                                 <ListItemButton
-                                                    key={m.uid}
+                                                    key={m.id}
                                                     onClick={() => {
-                                                        setModelValue(`${m.modelName}_${m.uid}`);
+                                                        setModelValue(`${m.id}_${m.model_name}`);
                                                         setCapturing(false);
                                                         capturingRef.current = false;
                                                         scrollToBottom();
                                                     }}
-                                                    selected={modelValue == `${m.modelName}_${m.uid}`}
+                                                    selected={modelValue == `${m.id}_${m.model_name}`}
                                                 >
-                                                    <ListItemText primary={m.modelName}></ListItemText>
+                                                    <ListItemText primary={m.model_name}></ListItemText>
                                                 </ListItemButton>
                                                 <Divider component="li" />
                                             </Fragment>

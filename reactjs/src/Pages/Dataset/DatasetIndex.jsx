@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
@@ -48,6 +48,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import apiClient from "../../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../../services/apiUrl.js";
+import { AuthContext } from "../../context/AuthContext.jsx";
 import { Link } from "react-router";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -55,6 +56,8 @@ import { useTheme } from '@mui/material/styles';
 let nextId = 0;
 
 function App() {
+    const { user } = useContext(AuthContext);
+
     // const camera = useRef(null);
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
@@ -423,7 +426,7 @@ function App() {
                 data: [],
             };
 
-            setClasses((prev) => {
+            setDatasetClasses((prev) => {
                 if (prev.some((item) => item.id === newClass.id || item.name === newClass.name)) {
                     return prev;
                 }
@@ -460,7 +463,10 @@ function App() {
     const getImageUrl = (classId, className, fileName) => {
         const apiVersion = "v1";
         const resourceId = "item-456";
-        const endpoint = `/api/dataset/${classId}_${className}/${fileName}`;
+        let tenantID = user?.tenant_id ?? "";
+        let tenantName = user?.tenant_name ?? "";
+        
+        const endpoint = `/api/dataset/${tenantID}_${tenantName}/${classId}_${className}/${fileName}`;
         const fullUrl = getApiUrl(endpoint);
         // console.log(fullUrl);
         return fullUrl;

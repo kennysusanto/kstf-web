@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 
 import { Camera } from "react-camera-pro";
 import "@mediapipe/face_detection";
@@ -57,10 +57,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../services/apiUrl.js";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
+import { AuthContext } from "../context/AuthContext.jsx";
+
 
 let nextId = 0;
 
 function App() {
+    const {user} = useContext(AuthContext);
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
     const [browserWidth, setBrowserWidth] = useState(window.innerWidth);
@@ -103,7 +106,7 @@ function App() {
         setDialogData(null);
         setShowDialog(false);
 
-        await apiClient.delete(getApiUrl(`/api/train/${dialogData.modelName}_${dialogData.uid}`));
+        await apiClient.delete(getApiUrl(`/api/train/${dialogData.model_name}_${dialogData.id}`));
         setModels([]);
         const dd = await modelsQuery.refetch();
         setModels(dd.data);
@@ -148,7 +151,9 @@ function App() {
 
     const processImage = async (classGroup) => {
         try {
-            let url = getApiUrl(`/api/dataset/${classGroup.datasetClassID}_${classGroup.datasetClassName}/${classGroup.datasetImageName}`);
+            let tenantID = user?.tenant_id ?? "";
+            let tenantName = user?.tenant_name ?? "";
+            let url = getApiUrl(`/api/dataset/${tenantID}_${tenantName}/${classGroup.datasetClassID}_${classGroup.datasetClassName}/${classGroup.datasetImageName}`);
             url = encodeURI(url);
 
             let fetchBlob = await apiClient.get(url, { responseType: "blob" });
@@ -227,7 +232,7 @@ function App() {
         });
     };
 
-    const trainAndPredict = async () => {
+    const startTrain = async () => {
         setLoading(true);
         try {
             setLogs([]);
@@ -455,7 +460,7 @@ function App() {
                                                                 textToast("Training started");
 
                                                                 setTimeout(async () => {
-                                                                    await trainAndPredict();
+                                                                    await startTrain();
                                                                 }, 500);
                                                             }}
                                                             fullWidth
@@ -506,7 +511,7 @@ function App() {
                                                             setShowDialog(true);
                                                         }}
                                                     >
-                                                        <ListItemText primary={m.modelName}></ListItemText>
+                                                        <ListItemText primary={m.model_name}></ListItemText>
                                                     </ListItemButton>
                                                     <Divider component="li" />
                                                 </>
@@ -559,7 +564,7 @@ function App() {
                 <DialogContent>
                     {dialogData == null ? null : (
                         <DialogContentText id="alert-dialog-description">
-                            You are viewing <b>{dialogData.modelName} ({dialogData.uid})</b>
+                            You are viewing <b>{dialogData.model_name} ({dialogData.id})</b>
                         </DialogContentText>
                     )}
                 </DialogContent>
