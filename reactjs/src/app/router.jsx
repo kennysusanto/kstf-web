@@ -3,7 +3,8 @@ import Splash from "../Splash.jsx";
 import Face from "../Face.jsx";
 import DatasetIndexPage from "../Pages/Dataset/DatasetIndex.jsx";
 import DatasetCreatePage from "../Pages/Dataset/DatasetCreate.jsx";
-import TrainPage from "../Pages/Train.jsx";
+import TrainPage from "../Pages/Train";
+import TrainPreviewPage from "../Pages/Train/TrainPreview.jsx";
 import PredictPage from "../Pages/Predict.jsx";
 import LoginPage from "../Pages/Login.jsx";
 import AppShell from "./AppShell.jsx";
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
                     {
                         path: "/train",
                         element: <TrainPage />,
+                    },
+                    {
+                        path: "/train/preview",
+                        element: <TrainPreviewPage />,
                     },
                     {
                         path: "/predict",

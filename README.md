@@ -124,6 +124,6 @@ Frontend runs on `http://localhost:5173`.
 - [x] DB storage login and dataset
 - [x] Tenant level separation for login and dataset
 - [x] Optimization API requests on Dataset, Train, Predict pages
-- [ ] Training data augmentation feature (rotation and blur variants)
+- [x] Training data augmentation feature (rotation and blur variants)
 - [ ] Update UI/UX
 - [ ] Caching dataset in Train page

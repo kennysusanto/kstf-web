@@ -8,8 +8,8 @@ import "@tensorflow/tfjs-backend-webgl";
 import * as faceDetection from "@tensorflow-models/face-detection";
 import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
-import Constants from "../Misc/Constants.jsx";
-
+import Constants from "../../Misc/Constants.jsx";
+import { Jimp } from "jimp";
 // import Container from "react-bootstrap/Container";
 // import Row from "react-bootstrap/Row";
 // import Col from "react-bootstrap/Col";
@@ -52,24 +52,27 @@ import Typography from "@mui/material/Typography";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 
-import apiClient from "../services/apiClient.js";
+import apiClient from "../../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getApiUrl } from "../services/apiUrl.js";
+import { getApiUrl } from "../../services/apiUrl.js";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
-import { AuthContext } from "../context/AuthContext.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { useNavigate } from "react-router";
 
 
 let nextId = 0;
 
 function App() {
-    const {user} = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
     const [browserWidth, setBrowserWidth] = useState(window.innerWidth);
     const [className, setClassName] = useState("");
     const [classesTensors, setClassesTensors] = useState([]);
     const [classesTensorLabels, setClassesTensorLabels] = useState([]);
+    const [countedDatasetClassID, setcountedDatasetClassID] = useState([]);
     const [highestDataCount, setHighestDataCount] = useState(0);
 
     const STOP_DATA_GATHER = -1;
@@ -86,12 +89,14 @@ function App() {
     const [modelName, setModelName] = useState("");
     const [prevModelName, setPrevModelName] = useState("");
     const [numberOfEpochs, setNumberOfEpochs] = useState(5);
+    const [numberOfAugmentations, setNumberOfAugmentations] = useState(5);
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
     const [models, setModels] = useState([]);
     const [samples, setSamples] = useState([]);
     const [loading, setLoading] = useState(false);
     const [logs, setLogs] = useState([]);
+    const [localImageBinaries, setLocalImageBinaries] = useState({});
 
     const isMobile = browserWidth <= 768;
     const isModelNameEmpty = modelName.trim() === "";
@@ -149,15 +154,49 @@ function App() {
         });
     };
 
-    const processImage = async (classGroup) => {
-        try {
-            let tenantID = user?.tenant_id ?? "";
-            let tenantName = user?.tenant_name ?? "";
-            let url = getApiUrl(`/api/dataset/${tenantID}_${tenantName}/${classGroup.datasetClassID}_${classGroup.datasetClassName}/${classGroup.datasetImageName}`);
-            url = encodeURI(url);
+    const getImageKey = (classGroup, imageName) => {
+        return `${classGroup.datasetClassID}_${classGroup.datasetClassName}/${imageName}`;
+    };
 
-            let fetchBlob = await apiClient.get(url, { responseType: "blob" });
-            let bmp = await createImageBitmap(fetchBlob.data);
+    const augmentImage = async (img, idx) => {
+        let a = await Jimp.fromBuffer(img);
+        // a.greyscale();
+        a.blur(2);
+        let max = 10;
+        let min = -10;
+        let kk = Math.floor(Math.random() * (max - min + 1)) + min;
+        a.rotate(kk);
+        const mimeType = "image/png";
+        const buffer = await a.getBuffer(mimeType);
+        const blob = new Blob([buffer], { type: mimeType });
+        return blob;
+    }
+
+    const getRealImage = async (classGroup, imageBinaries) => {
+        let tenantID = user?.tenant_id ?? "";
+        let tenantName = user?.tenant_name ?? "";
+        let url = getApiUrl(`/api/dataset/${tenantID}_${tenantName}/${classGroup.datasetClassID}_${classGroup.datasetClassName}/${classGroup.datasetImageName}`);
+        url = encodeURI(url);
+        let fetchBlob = await apiClient.get(url, { responseType: "blob" });
+        let bmp = await createImageBitmap(fetchBlob.data);
+        imageBinaries[getImageKey(classGroup, classGroup.datasetImageName)] = fetchBlob.data;
+        return { fetchBlob, bmp };
+    }
+
+    const getAugmentedImages = async (classGroup, fetchBlob, imageBinaries) => {
+        let bmps = [];
+        for (let i = 0; i < numberOfAugmentations; i++) {
+            let augmented = await augmentImage(await fetchBlob.data.arrayBuffer(), i);
+            let augmentedName = classGroup.datasetImageName + "_augmented" + (i + 1);
+            imageBinaries[getImageKey(classGroup, augmentedName)] = augmented;
+            let bmp = await createImageBitmap(augmented);
+            bmps.push(bmp);
+        }
+        return bmps;
+    }
+
+    const processImage = async (classGroup, bmp) => {
+        try {
             // const canvas = document.createElement('canvas');
             let imageTensor = tf.tidy(function () {
                 // read file bytes
@@ -193,16 +232,47 @@ function App() {
             classesTensors.push(imageTensor);
             classesTensorLabels.push(classGroup.id);
             // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
-            let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
-            setHighestDataCount((prevHighestDataCount) => {
-                if (dataCount > prevHighestDataCount) {
-                    return dataCount;
-                }
-                return prevHighestDataCount;
-            });
+            // let dataCount = classesTensorLabels.filter((m) => m == classGroup.id).length;
+            // setHighestDataCount((prevHighestDataCount) => {
+            //     if (dataCount > prevHighestDataCount) {
+            //         return dataCount;
+            //     }
+            //     return prevHighestDataCount;
+            // });
         } catch (err) {
             console.error(err);
         }
+    };
+
+    const startProcessingImages = async (isForTraining) => {
+        console.time("Processing images");
+        const imageBinaries = {};
+        for (const g of datasetImages) {
+            g.count = g.data.length;
+            for (const file of g.data) {
+                let curGroup = {
+                    id: g.id,
+                    datasetClassID: g.id,
+                    datasetClassName: g.name,
+                    datasetImageName: file.name,
+                };
+                let { fetchBlob, bmp } = await getRealImage(curGroup, imageBinaries)
+                // console.log(fetchBlob, bmp);
+                if (isForTraining) {
+                    await processImage(curGroup, bmp);
+                }
+                let augmentedBmps = await getAugmentedImages(curGroup, fetchBlob, imageBinaries);
+                // console.log(augmentedBmps);
+                if (isForTraining) {
+                    for (const augmentedBmp of augmentedBmps) {
+                        await processImage(curGroup, augmentedBmp);
+                    }
+                }
+            }
+        }
+        setLocalImageBinaries(imageBinaries);
+        console.timeEnd("Processing images");
+        return imageBinaries;
     };
 
     useEffect(() => {
@@ -235,6 +305,9 @@ function App() {
     const startTrain = async () => {
         setLoading(true);
         try {
+            // process images
+            await startProcessingImages(true);
+
             setLogs([]);
             setTrainingComplete(false);
             let model = tf.sequential();
@@ -268,6 +341,8 @@ function App() {
             // console.log("outputsAsTensor", await outputsAsTensor.data());
             // console.log("oneHotOutputs", await oneHotOutputs.data());
             // console.log("inputsAsTensor", await inputsAsTensor.data());
+
+            console.log("Training on ", trainingDataInputs.length, " samples across ", datasetImages.length, " classes with ", numberOfEpochs, " epochs and ", numberOfAugmentations, " augmentations per image.");
 
             let results = await model.fit(inputsAsTensor, oneHotOutputs, {
                 shuffle: true,
@@ -337,15 +412,13 @@ function App() {
         for (const g of classGroups) {
             g.count = g.data.length;
             for (const file of g.data) {
-                // let id = g.id;
-                // let name = file.name;
-
-                await processImage({
-                    id: g.id,
-                    datasetClassID: g.id,
-                    datasetClassName: g.name,
-                    datasetImageName: file.name,
-                    // data: file,
+                countedDatasetClassID.push(g.id);
+                let dataCount = countedDatasetClassID.filter((m) => m == g.id).length;
+                setHighestDataCount((prevHighestDataCount) => {
+                    if (dataCount > prevHighestDataCount) {
+                        return dataCount;
+                    }
+                    return prevHighestDataCount;
                 });
             }
         }
@@ -434,7 +507,7 @@ function App() {
                                                             fullWidth
                                                         />
                                                     </Grid>
-                                                    <Grid size={12}>
+                                                    <Grid size={6}>
                                                         <TextField
                                                             value={numberOfEpochs}
                                                             label="Number of Epochs"
@@ -445,6 +518,37 @@ function App() {
                                                             variant="filled"
                                                             fullWidth
                                                         />
+                                                    </Grid>
+                                                    <Grid size={6}>
+                                                        <TextField
+                                                            value={numberOfAugmentations}
+                                                            label="Number of Augmentations"
+                                                            onChange={(e) => setNumberOfAugmentations(e.target.value)}
+                                                            type="number"
+                                                            slotProps={{ htmlInput: { min: 5 } }}
+                                                            placeholder="5"
+                                                            variant="filled"
+                                                            fullWidth
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <Button
+                                                            className="mb-2"
+                                                            variant="outlined"
+                                                            color="primary"
+                                                            onClick={async () => {
+                                                                const processedBinaries = await startProcessingImages(false);
+                                                                navigate("/train/preview", {
+                                                                    state: {
+                                                                        localImageBinaries: processedBinaries || {},
+                                                                    },
+                                                                });
+                                                            }}
+                                                            disabled={status !== "success" || !datasetImages || datasetImages.length === 0}
+                                                            fullWidth
+                                                        >
+                                                            Preview Dataset
+                                                        </Button>
                                                     </Grid>
                                                     <Grid size={12}>
                                                         <Button
@@ -501,7 +605,7 @@ function App() {
                                         {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
                                         {modelsQuery.status === "success"
                                             ? models.map((m) => (
-                                                <>
+                                                <div key={m.uid}>
                                                     <ListItemButton
                                                         key={m.uid}
                                                         onClick={() => {
@@ -514,7 +618,7 @@ function App() {
                                                         <ListItemText primary={m.model_name}></ListItemText>
                                                     </ListItemButton>
                                                     <Divider component="li" />
-                                                </>
+                                                </div>
                                             ))
                                             : null}
                                     </List>
