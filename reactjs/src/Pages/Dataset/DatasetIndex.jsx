@@ -55,33 +55,33 @@ import { useTheme } from '@mui/material/styles';
 let nextId = 0;
 
 function App() {
-    const camera = useRef(null);
+    // const camera = useRef(null);
     const [image, setImage] = useState(null);
     const [images, setImages] = useState([]);
-    const [numberOfCameras, setNumberOfCameras] = useState(0);
+    // const [numberOfCameras, setNumberOfCameras] = useState(0);
     let video = document.querySelector(".container-dataset #video");
     let canvas = useRef(null);
     let canvasctx = useRef(null);
-    const [devices, setDevices] = useState([]);
-    const [activeDeviceId, setActiveDeviceId] = useState("");
-    const [capturing, setCapturing] = useState(false);
+    // const [devices, setDevices] = useState([]);
+    // const [activeDeviceId, setActiveDeviceId] = useState("");
+    // const [capturing, setCapturing] = useState(false);
 
-    const detectorModel = faceDetection.SupportedModels.MediaPipeFaceDetector;
-    const detectorConfig = {
-        runtime: "mediapipe",
-        solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/face_detection",
-        // or 'base/node_modules/@mediapipe/face_detection' in npm.
-    };
+    // const detectorModel = faceDetection.SupportedModels.MediaPipeFaceDetector;
+    // const detectorConfig = {
+    //     runtime: "mediapipe",
+    //     solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/face_detection",
+    //     // or 'base/node_modules/@mediapipe/face_detection' in npm.
+    // };
 
-    const [detector, setDetector] = useState(null);
-    var capturingRef = useRef(capturing);
+    // const [detector, setDetector] = useState(null);
+    // var capturingRef = useRef(capturing);
 
     const [browserWidth, setBrowserWidth] = useState(window.innerWidth);
     const [className, setClassName] = useState("");
     const [classes, setClasses] = useState([]);
-    const [classesTensors, setClassesTensors] = useState([]);
-    const [classesTensorLabels, setClassesTensorLabels] = useState([]);
-    const [highestDataCount, setHighestDataCount] = useState(0);
+    // const [classesTensors, setClassesTensors] = useState([]);
+    // const [classesTensorLabels, setClassesTensorLabels] = useState([]);
+    // const [highestDataCount, setHighestDataCount] = useState(0);
     const [dataChanged, setDataChanged] = useState(false);
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
@@ -193,50 +193,50 @@ function App() {
     //     })();
     // }, []);
 
-    useEffect(() => {
-        (async () => {
-            console.log("Detector is initializing");
-            let d = await faceDetection.createDetector(detectorModel, detectorConfig);
-            setDetector(d);
-            console.log("Detector is initialized");
-        })();
-    }, []);
+    // useEffect(() => {
+    //     (async () => {
+    //         console.log("Detector is initializing");
+    //         let d = await faceDetection.createDetector(detectorModel, detectorConfig);
+    //         setDetector(d);
+    //         console.log("Detector is initialized");
+    //     })();
+    // }, []);
 
-    useEffect(() => {
-        if (!capturing) {
-            return;
-        }
-        detectFaceLoop();
-    }, [capturing]);
+    // useEffect(() => {
+    //     if (!capturing) {
+    //         return;
+    //     }
+    //     detectFaceLoop();
+    // }, [capturing]);
 
-    const detectFaceLoop = () => {
-        if (capturingRef.current) {
-            const estimationConfig = { flipHorizontal: false };
-            detector.estimateFaces(video, estimationConfig).then((faces) => {
-                if (faces.length > 0) {
-                    let r = faces[0].box;
-                    let canvas = document.querySelector(".container-dataset .canvas2");
-                    let image = document.querySelector(".container-dataset .img1");
-                    let ctx = canvas.getContext("2d");
-                    canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
-                    canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
-                    // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
-                    let data = canvas.toDataURL("image/png");
-                    image.setAttribute("src", data);
-                    image.style.visibility = "visible";
-                    // canvasctx.beginPath(); // Start a new path
-                    // canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
-                    // canvasctx.stroke();
-                }
-            });
+    // const detectFaceLoop = () => {
+    //     if (capturingRef.current) {
+    //         const estimationConfig = { flipHorizontal: false };
+    //         detector.estimateFaces(video, estimationConfig).then((faces) => {
+    //             if (faces.length > 0) {
+    //                 let r = faces[0].box;
+    //                 let canvas = document.querySelector(".container-dataset .canvas2");
+    //                 let image = document.querySelector(".container-dataset .img1");
+    //                 let ctx = canvas.getContext("2d");
+    //                 canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
+    //                 canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
+    //                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //                 ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
+    //                 // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
+    //                 let data = canvas.toDataURL("image/png");
+    //                 image.setAttribute("src", data);
+    //                 image.style.visibility = "visible";
+    //                 // canvasctx.beginPath(); // Start a new path
+    //                 // canvasctx.rect(r.xMin, r.yMin, r.width, r.height);
+    //                 // canvasctx.stroke();
+    //             }
+    //         });
 
-            requestAnimationFrame(detectFaceLoop);
-        } else {
-            clearPreview();
-        }
-    };
+    //         requestAnimationFrame(detectFaceLoop);
+    //     } else {
+    //         clearPreview();
+    //     }
+    // };
 
     const textToast = (msg) => {
         if (msg == "") {
@@ -255,82 +255,82 @@ function App() {
         });
     };
 
-    const clearPreview = () => {
-        let image = document.querySelector(".container-dataset .img1");
-        image.setAttribute("src", "");
-        image.style.visibility = "hidden";
-        setImage(null);
-    };
+    // const clearPreview = () => {
+    //     let image = document.querySelector(".container-dataset .img1");
+    //     image.setAttribute("src", "");
+    //     image.style.visibility = "hidden";
+    //     setImage(null);
+    // };
 
-    const calculateFaceTensor = async (showToast = true) => {
-        const estimationConfig = { flipHorizontal: false };
-        const faces = await detector.estimateFaces(video, estimationConfig);
+    // const calculateFaceTensor = async (showToast = true) => {
+    //     const estimationConfig = { flipHorizontal: false };
+    //     const faces = await detector.estimateFaces(video, estimationConfig);
 
-        if (faces.length > 0) {
-            let r = faces[0].box;
-            let canvas = document.querySelector(".container-dataset .canvas2");
-            let image = document.querySelector(".container-dataset .img1");
-            let ctx = canvas.getContext("2d");
-            canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
-            canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
-            // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
-            let data = canvas.toDataURL("image/png");
-            image.setAttribute("src", data);
-            image.style.visibility = "visible";
+    //     if (faces.length > 0) {
+    //         let r = faces[0].box;
+    //         let canvas = document.querySelector(".container-dataset .canvas2");
+    //         let image = document.querySelector(".container-dataset .img1");
+    //         let ctx = canvas.getContext("2d");
+    //         canvas.width = Constants.MOBILE_NET_INPUT_WIDTH;
+    //         canvas.height = Constants.MOBILE_NET_INPUT_HEIGHT;
+    //         ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //         ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, canvas.width, canvas.height);
+    //         // ctx.drawImage(video, r.xMin, r.yMin, r.width, r.height, 0, 0, r.width, r.height);
+    //         let data = canvas.toDataURL("image/png");
+    //         image.setAttribute("src", data);
+    //         image.style.visibility = "visible";
 
-            image.style.display = "block";
+    //         image.style.display = "block";
 
-            return tf.tidy(function () {
-                let videoFrameAsTensor = tf.browser.fromPixels(canvas);
-                // Resize video frame tensor to be 224 x 224 pixels which is needed by MobileNet for input.
-                let resizedTensorFrame = tf.image.resizeBilinear(
-                    videoFrameAsTensor,
-                    [Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH],
-                    true
-                );
+    //         return tf.tidy(function () {
+    //             let videoFrameAsTensor = tf.browser.fromPixels(canvas);
+    //             // Resize video frame tensor to be 224 x 224 pixels which is needed by MobileNet for input.
+    //             let resizedTensorFrame = tf.image.resizeBilinear(
+    //                 videoFrameAsTensor,
+    //                 [Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH],
+    //                 true
+    //             );
 
-                let normalizedTensorFrame = resizedTensorFrame.div(255);
+    //             let normalizedTensorFrame = resizedTensorFrame.div(255);
 
-                // return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
-                return normalizedTensorFrame;
-            });
-        } else {
-            if (showToast) {
-                textToast("Face not detected!");
-            }
+    //             // return mobileNetBase.predict(normalizedTensorFrame.expandDims()).squeeze();
+    //             return normalizedTensorFrame;
+    //         });
+    //     } else {
+    //         if (showToast) {
+    //             textToast("Face not detected!");
+    //         }
 
-            return null;
-        }
-    };
+    //         return null;
+    //     }
+    // };
 
-    const captureImage = async (cc) => {
-        // console.log("capture", cc);
-        // let imageFeatures = calculateFeaturesOnCurrentFrame();
-        let imageTensor = await calculateFaceTensor();
-        // console.log("KS imageFeatures", imageFeatures);
+    // const captureImage = async (cc) => {
+    //     // console.log("capture", cc);
+    //     // let imageFeatures = calculateFeaturesOnCurrentFrame();
+    //     let imageTensor = await calculateFaceTensor();
+    //     // console.log("KS imageFeatures", imageFeatures);
 
-        if (imageTensor === null) {
-            return;
-        }
+    //     if (imageTensor === null) {
+    //         return;
+    //     }
 
-        let canvas = document.querySelector(".container-dataset .canvas2");
-        let data = canvas.toDataURL("image/png");
-        setImage(data);
-        images.push({ id: cc.id, name: cc.name, data });
-        // trainingDataInputs.push(imageFeatures);
-        // trainingDataOutputs.push(cc.id);
-        classesTensors.push(imageTensor);
-        classesTensorLabels.push(cc.id);
-        classes.find((m) => m.id == cc.id).count++;
-        // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
-        let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
-        if (dataCount > highestDataCount) {
-            setHighestDataCount(dataCount);
-        }
-        setDataChanged(true);
-    };
+    //     let canvas = document.querySelector(".container-dataset .canvas2");
+    //     let data = canvas.toDataURL("image/png");
+    //     setImage(data);
+    //     images.push({ id: cc.id, name: cc.name, data });
+    //     // trainingDataInputs.push(imageFeatures);
+    //     // trainingDataOutputs.push(cc.id);
+    //     classesTensors.push(imageTensor);
+    //     classesTensorLabels.push(cc.id);
+    //     classes.find((m) => m.id == cc.id).count++;
+    //     // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
+    //     let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
+    //     if (dataCount > highestDataCount) {
+    //         setHighestDataCount(dataCount);
+    //     }
+    //     setDataChanged(true);
+    // };
 
     const uuidv4 = () => {
         return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
@@ -357,18 +357,18 @@ function App() {
         return newId;
     };
 
-    const inputClass = () => {
-        if (className != "") {
-            classes.push({
-                id: generateId(),
-                name: className,
-                count: 0,
-            });
-            localStorage.setItem("classes", JSON.stringify(classes));
-            setClassName("");
-        }
-        document.querySelector(".classname-input").focus();
-    };
+    // const inputClass = () => {
+    //     if (className != "") {
+    //         classes.push({
+    //             id: generateId(),
+    //             name: className,
+    //             count: 0,
+    //         });
+    //         localStorage.setItem("classes", JSON.stringify(classes));
+    //         setClassName("");
+    //     }
+    //     document.querySelector(".classname-input").focus();
+    // };
 
     const {
         status,
@@ -404,11 +404,11 @@ function App() {
     //     refetch();
     // }, []);
 
-    const mutation = useMutation({
-        mutationFn: (newData) => {
-            return apiClient.post(getApiUrl(`/api/dataset`), newData);
-        },
-    });
+    // const mutation = useMutation({
+    //     mutationFn: (newData) => {
+    //         return apiClient.post(getApiUrl(`/api/dataset`), newData);
+    //     },
+    // });
 
     const addClassMutation = useMutation({
         mutationFn: (payload) => {
@@ -449,13 +449,13 @@ function App() {
         addClassMutation.mutate({ name: className });
     };
 
-    const saveToServer = () => {
-        mutation.mutate({
-            images,
-            classes,
-        });
-        setDataChanged(false);
-    };
+    // const saveToServer = () => {
+    //     mutation.mutate({
+    //         images,
+    //         classes,
+    //     });
+    //     setDataChanged(false);
+    // };
 
     const getImageUrl = (classId, className, fileName, ext) => {
         const apiVersion = "v1";

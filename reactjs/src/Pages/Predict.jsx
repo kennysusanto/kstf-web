@@ -363,7 +363,7 @@ function App() {
     const listStyle = {
         py: 0,
         width: "100%",
-        maxWidth: 360,
+        // maxWidth: 360,
         borderRadius: 12,
         border: "1px solid",
         borderColor: "divider",
@@ -465,32 +465,33 @@ function App() {
                 <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                     <Card variant="outlined">
                         <CardContent>
-                            <Typography variant="h6" component="h3">
-                                Models
-                            </Typography>
-                            <List style={listStyle}>
-                                {status === "pending" ? <span>Loading...</span> : null}
-                                {status === "success"
-                                    ? models.map((m, index) => (
-                                        <Fragment key={m.uid}>
-                                            <ListItemButton
-                                                key={m.uid}
-                                                onClick={() => {
-                                                    setModelValue(`${m.modelName}_${m.uid}`);
-                                                    setCapturing(false);
-                                                    capturingRef.current = false;
-                                                    scrollToBottom();
-                                                }}
-                                                selected={modelValue == `${m.modelName}_${m.uid}`}
-                                            >
-                                                <ListItemText primary={m.modelName}></ListItemText>
-                                            </ListItemButton>
-                                            <Divider component="li" />
-                                        </Fragment>
-                                    ))
-                                    : null}
-                            </List>
-
+                            <Grid container spacing={1}>
+                                <Typography variant="h6" component="h3">
+                                    Models
+                                </Typography>
+                                <List style={listStyle}>
+                                    {status === "pending" ? <span>Loading...</span> : null}
+                                    {status === "success"
+                                        ? models.map((m, index) => (
+                                            <Fragment key={m.uid}>
+                                                <ListItemButton
+                                                    key={m.uid}
+                                                    onClick={() => {
+                                                        setModelValue(`${m.modelName}_${m.uid}`);
+                                                        setCapturing(false);
+                                                        capturingRef.current = false;
+                                                        scrollToBottom();
+                                                    }}
+                                                    selected={modelValue == `${m.modelName}_${m.uid}`}
+                                                >
+                                                    <ListItemText primary={m.modelName}></ListItemText>
+                                                </ListItemButton>
+                                                <Divider component="li" />
+                                            </Fragment>
+                                        ))
+                                        : null}
+                                </List>
+                            </Grid>
                             {/* <img src={sample} /> */}
                         </CardContent>
                     </Card>

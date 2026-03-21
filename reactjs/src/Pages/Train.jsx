@@ -49,6 +49,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -79,12 +81,17 @@ function App() {
     const [mobileNetBase, setMobileNetBase] = useState(undefined);
     const [trainingComplete, setTrainingComplete] = useState(false);
     const [modelName, setModelName] = useState("");
+    const [prevModelName, setPrevModelName] = useState("");
+    const [numberOfEpochs, setNumberOfEpochs] = useState(5);
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
     const [models, setModels] = useState([]);
     const [samples, setSamples] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [logs, setLogs] = useState([]);
 
     const isMobile = browserWidth <= 768;
+    const isModelNameEmpty = modelName.trim() === "";
 
     const handleCloseDialog = () => {
         setDialogData(null);
@@ -230,95 +237,104 @@ function App() {
     };
 
     const trainAndPredict = async () => {
-        setTrainingComplete(false);
-        let model = tf.sequential();
-        model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
-        model.add(tf.layers.dense({ units: dataset.length, activation: "softmax" }));
+        setLoading(true);
+        try {
+            setLogs([]);
+            setTrainingComplete(false);
+            let model = tf.sequential();
+            model.add(tf.layers.dense({ inputShape: [1280], units: 64, activation: "relu" }));
+            model.add(tf.layers.dense({ units: dataset.length, activation: "softmax" }));
 
-        model.summary();
+            model.summary();
 
-        // Compile the model with the defined optimizer and specify a loss function to use.
-        model.compile({
-            // Adam changes the learning rate over time which is useful.
-            optimizer: "adam",
-            // Use the correct loss function. If 2 classes of data, must use binaryCrossentropy.
-            // Else categoricalCrossentropy is used if more than 2 classes.
-            loss: dataset.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
-            // As this is a classification problem you can record accuracy in the logs too!
-            metrics: ["accuracy"],
-        });
-        setModel(model);
-
-        tf.util.shuffleCombo(trainingDataInputs, trainingDataOutputs);
-
-        console.log("dataset", dataset);
-        console.log("trainingDataOutputs", trainingDataOutputs);
-        const indices = trainingDataOutputs.map(classID => dataset.indexOf(dataset.find(m => m.id == classID)));
-        const outputsAsTensor = tf.tensor1d(indices, 'int32');
-        // let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
-        let oneHotOutputs = tf.oneHot(outputsAsTensor, dataset.length);
-        let inputsAsTensor = tf.stack(trainingDataInputs);
-
-
-        console.log("outputsAsTensor", await outputsAsTensor.data());
-        console.log("oneHotOutputs", await oneHotOutputs.data());
-        console.log("inputsAsTensor", await inputsAsTensor.data());
-
-        let results = await model.fit(inputsAsTensor, oneHotOutputs, {
-            shuffle: true,
-            batchSize: 5,
-            epochs: 5,
-            callbacks: { onEpochEnd: logProgress },
-        });
-
-        outputsAsTensor.dispose();
-        oneHotOutputs.dispose();
-        inputsAsTensor.dispose();
-
-        // Make combined model for download.
-
-        // let combinedModel = model;
-        let combinedModel = tf.sequential();
-        combinedModel.add(mobileNetBase);
-        combinedModel.add(model);
-
-        combinedModel.compile({
-            optimizer: "adam",
-            loss: dataset.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
-        });
-
-        combinedModel.summary();
-        console.log("TRAINING COMPLETE");
-        // await combinedModel.save("downloads://my-model");
-        // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
-        let resp = await model.save(getApiUrl(`/api/train`));
-
-        let newName = modelName;
-        for (const r of resp.responses) {
-            r.json().then(async (rr) => {
-                console.log(rr);
-                let respRename = await apiClient.post(getApiUrl(`/api/train/rename`), {
-                    oldName: rr.data.uuid,
-                    newName: newName,
-                });
-                modelsQuery.refetch();
+            // Compile the model with the defined optimizer and specify a loss function to use.
+            model.compile({
+                // Adam changes the learning rate over time which is useful.
+                optimizer: "adam",
+                // Use the correct loss function. If 2 classes of data, must use binaryCrossentropy.
+                // Else categoricalCrossentropy is used if more than 2 classes.
+                loss: dataset.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
+                // As this is a classification problem you can record accuracy in the logs too!
+                metrics: ["accuracy"],
             });
+            setModel(model);
+
+            tf.util.shuffleCombo(trainingDataInputs, trainingDataOutputs);
+
+            // console.log("dataset", dataset);
+            // console.log("trainingDataOutputs", trainingDataOutputs);
+            const indices = trainingDataOutputs.map(classID => dataset.indexOf(dataset.find(m => m.id == classID)));
+            const outputsAsTensor = tf.tensor1d(indices, 'int32');
+            // let outputsAsTensor = tf.tensor1d(trainingDataOutputs, "int32");
+            let oneHotOutputs = tf.oneHot(outputsAsTensor, dataset.length);
+            let inputsAsTensor = tf.stack(trainingDataInputs);
+
+            // console.log("outputsAsTensor", await outputsAsTensor.data());
+            // console.log("oneHotOutputs", await oneHotOutputs.data());
+            // console.log("inputsAsTensor", await inputsAsTensor.data());
+
+            let results = await model.fit(inputsAsTensor, oneHotOutputs, {
+                shuffle: true,
+                batchSize: 5,
+                epochs: numberOfEpochs,
+                callbacks: { onEpochEnd: logProgress },
+            });
+
+            outputsAsTensor.dispose();
+            oneHotOutputs.dispose();
+            inputsAsTensor.dispose();
+
+            // Make combined model for download.
+
+            // let combinedModel = model;
+            // let combinedModel = tf.sequential();
+            // combinedModel.add(mobileNetBase);
+            // combinedModel.add(model);
+
+            // combinedModel.compile({
+            //     optimizer: "adam",
+            //     loss: dataset.length === 2 ? "binaryCrossentropy" : "categoricalCrossentropy",
+            // });
+
+            // combinedModel.summary();
+            console.log("TRAINING COMPLETE");
+            // await combinedModel.save("downloads://my-model");
+            // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
+            let resp = await model.save(getApiUrl(`/api/train`));
+
+            let newName = modelName;
+            for (const r of resp.responses) {
+                r.json().then(async (rr) => {
+                    // console.log(rr);
+                    let respRename = await apiClient.post(getApiUrl(`/api/train/rename`), {
+                        oldName: rr.data.uuid,
+                        newName: newName,
+                    });
+                    modelsQuery.refetch();
+                });
+            }
+
+            setPrevModelName(modelName);
+            setModelName("");
+            // apiClient.post("http://localhost:5172/api/train", { name: "unique", data: combinedModel });
+
+            // predictLoop();
+            setTrainingComplete(true);
+            textToast("Training complete!");
+            scrollToBottom();
+        } finally {
+            setLoading(false);
         }
-
-        setModelName("");
-        // apiClient.post("http://localhost:5172/api/train", { name: "unique", data: combinedModel });
-
-        // predictLoop();
-        setTrainingComplete(true);
-        textToast("Training complete!");
-        scrollToBottom();
     };
 
     const logProgress = (epoch, logs) => {
         console.log("Data for epoch " + epoch, logs);
+        setLogs((prevLogs) => [...prevLogs, { epoch, ...logs }]);
+        scrollToBottom();
     };
 
     const fetchQuery = async () => {
+        setLoading(true);
         const data = await apiClient.get(getApiUrl(`/api/dataset`));
         let classGroups = data.data.data;
         // setSamples([]);
@@ -335,6 +351,7 @@ function App() {
                 });
             }
         }
+        setLoading(false);
         return classGroups;
     };
 
@@ -393,8 +410,8 @@ function App() {
                                                 {status === "pending" ? <span>Loading...</span> : null}
                                                 {status === "success" ? (
                                                     <Grid container spacing={2}>
-                                                        {dataset.map((d) => (
-                                                            <Grid>
+                                                        {dataset.map((d, index) => (
+                                                            <Grid key={index}>
                                                                 <Button key={d.id} variant="outlined" disabled>
                                                                     {d.name} ({d.count})
                                                                 </Button>
@@ -414,6 +431,20 @@ function App() {
                                                             onChange={(e) => setModelName(e.target.value)}
                                                             placeholder="Awesome Model"
                                                             variant="filled"
+                                                            error={isModelNameEmpty}
+                                                            helperText={isModelNameEmpty ? "Model name is required" : ""}
+                                                            fullWidth
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <TextField
+                                                            value={numberOfEpochs}
+                                                            label="Number of Epochs"
+                                                            onChange={(e) => setNumberOfEpochs(e.target.value)}
+                                                            type="number"
+                                                            slotProps={{ htmlInput: { min: 5 } }}
+                                                            placeholder="5"
+                                                            variant="filled"
                                                             fullWidth
                                                         />
                                                     </Grid>
@@ -423,7 +454,7 @@ function App() {
                                                             variant="contained"
                                                             color="success"
                                                             disabled={
-                                                                highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
+                                                                isModelNameEmpty || highestDataCount == 0 || dataset.length == 0 || !dataset.every((m) => m.count == highestDataCount)
                                                             }
                                                             title="Data count needs to be the same across all class"
                                                             onClick={() => {
@@ -439,15 +470,16 @@ function App() {
                                                             Train {modelName} on {dataset.length} classes
                                                         </Button>
                                                     </Grid>
-                                                    <Grid size={12}>
+                                                    {/* <Grid size={12}>
                                                         <span>Highest data count: {highestDataCount}</span>
-                                                    </Grid>
-                                                    <Grid size={12}>
-                                                        <span>
-                                                            All class length the same as highest data count:{" "}
-                                                            {dataset.every((m) => m.count == highestDataCount) ? "true" : "false"}
-                                                        </span>
-                                                    </Grid>
+                                                    </Grid> */}
+                                                    {dataset.every((m) => m.count == highestDataCount) ? null :
+                                                        <Grid size={12}>
+                                                            <Typography color={"error"}>
+                                                                Data count needs to be the same across all classes to start training. Please add more data to the classes with less data.
+                                                            </Typography>
+                                                        </Grid>
+                                                    }
                                                 </Grid>
                                             ) : null}
                                         </Grid>
@@ -489,6 +521,22 @@ function App() {
                                             : null}
                                     </List>
                                 </Grid>
+                                {logs.length == 0 ? null :
+                                    <Grid>
+                                        <Typography variant="h6" component="h3">
+                                            Summary ({prevModelName})
+                                        </Typography>
+                                        <List>
+                                            {logs.map((l, index) => (
+                                                <ListItem>
+                                                    <Typography key={index} component="p">
+                                                        Epoch {l.epoch + 1}: loss: {l.loss.toFixed(5)}, accuracy: {(l.acc * 100).toFixed(2)}%
+                                                    </Typography>
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </Grid>
+                                }
 
                                 {/* <Grid size={12}>
                                             <Typography variant="h6" component="h3">
@@ -531,6 +579,9 @@ function App() {
                     </Button>
                 </DialogActions>
             </Dialog>
+            <Backdrop open={loading} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
             <ToastContainer limit={5} />
         </>
     );
