@@ -5,16 +5,18 @@ services:
             - --providers.docker=true
             - --providers.docker.exposedbydefault=false
             - --entrypoints.web.address=:80
+            - --serversTransport.insecureSkipVerify=true
         ports:
             - "${TRAEFIK_HTTP_PORT:-80}:80"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
         restart: unless-stopped
 
-    web:
+    backend:
         build:
             context: ./
-            target: final
+            target: backend-base
+        command: ["node", "src/index.js"]
         environment:
             PORT: ${PORT:-5172}
             MYSQL_HOST: mysql
@@ -27,9 +29,10 @@ services:
         restart: unless-stopped
         labels:
             traefik.enable: "true"
-            traefik.http.routers.web.rule: Host(`${TRAEFIK_HOST:-localhost}`)
-            traefik.http.routers.web.entrypoints: web
-            traefik.http.services.web.loadbalancer.server.port: "5172"
+            traefik.http.routers.backend.rule: Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/api`)
+            traefik.http.routers.backend.entrypoints: web
+            traefik.http.routers.backend.priority: "100"
+            traefik.http.services.backend.loadbalancer.server.port: "5172"
         healthcheck:
             test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || '5172') + '/api').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
             interval: 10s
@@ -39,6 +42,28 @@ services:
         volumes:
             - kstf-web-model-data:/usr/local/kstf-web/src/public/model
             - kstf-web-dataset-data:/usr/local/kstf-web/src/public/dataset
+
+    client:
+        build:
+            context: ./
+            target: client-prod
+        depends_on:
+            backend:
+                condition: service_healthy
+        restart: unless-stopped
+        labels:
+            traefik.enable: "true"
+            traefik.http.routers.client.rule: Host(`${TRAEFIK_HOST:-localhost}`)
+            traefik.http.routers.client.entrypoints: web
+            traefik.http.routers.client.priority: "1"
+            traefik.http.services.client.loadbalancer.server.scheme: https
+            traefik.http.services.client.loadbalancer.server.port: "5173"
+        healthcheck:
+            test: ["CMD", "node", "-e", "process.env.NODE_TLS_REJECT_UNAUTHORIZED='0'; fetch('https://127.0.0.1:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
 
     mysql:
         image: mysql:9.3

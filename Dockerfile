@@ -21,6 +21,7 @@ RUN npm install --legacy-peer-deps
 COPY reactjs/index.html reactjs/vite.config.js ./
 COPY reactjs/public ./public
 COPY reactjs/src ./src
+COPY reactjs/.env ./
 
 ###################################################
 # Stage: client-dev
@@ -40,6 +41,10 @@ CMD ["npm", "run", "dev"]
 FROM client-base AS client-build
 RUN npm run build
 
+FROM client-build AS client-prod
+EXPOSE 5173
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
+
 ###################################################
 ################  BACKEND STAGES  #################
 ###################################################
@@ -55,6 +60,7 @@ COPY expressjs/package.json expressjs/package-lock.json ./
 RUN npm install
 COPY expressjs/spec ./spec
 COPY expressjs/src ./src
+COPY expressjs/.env ./
 RUN mkdir -p ./src/public/model
 RUN mkdir -p ./src/public/dataset
 
