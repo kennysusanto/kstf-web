@@ -371,7 +371,7 @@ function App() {
             console.log("TRAINING COMPLETE");
             // await combinedModel.save("downloads://my-model");
             // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
-            console.log(getApiUrl(`/api/train`));
+            // console.log(getApiUrl(`/api/train`));
             let resp = await model.save(getApiUrl(`/api/train`));
 
             let newName = modelName;
