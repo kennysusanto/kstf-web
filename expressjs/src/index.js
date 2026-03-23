@@ -21,7 +21,7 @@ import authContext from "./middleware/authContext.js";
 // const credentials = { key: privateKey, cert: certificate };
 
 const app = express();
-const port = 5172;
+const port = Number(process.env.PORT) || 5172;
 
 const corsOptions = {
     origin: [

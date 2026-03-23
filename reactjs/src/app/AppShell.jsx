@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { AuthContext } from "../context/AuthContext.jsx";
-import ConfirmLogoutModal from "../components/shared/ConfirmLogoutModal.jsx";
+import ConfirmLogoutModal from "../Components/shared/ConfirmLogoutModal.jsx";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";

@@ -31,12 +31,31 @@ KSTF Web is a full-stack face recognition web app with:
 
 From repository root:
 
+1) Create env file from template:
+
+`copy .env.production.example .env`
+
+2) Update secrets in `.env`:
+
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_PASSWORD`
+
+3) Start services:
+
 `docker compose up --build -d`
 
 Useful URLs:
 
-- App (via Traefik): `http://localhost:81`
-- phpMyAdmin: `http://localhost:82`
+- App (via Traefik): `http://localhost`
+- phpMyAdmin (debug only): `http://localhost:82` (run with `--profile debug`)
+
+Debug phpMyAdmin start command:
+
+`docker compose --profile debug up -d phpmyadmin`
+
+### for development server
+
+`docker compose -f compose_development.yaml -p kstf-web-development up`
 
 ## Run Locally (Without Docker)
 

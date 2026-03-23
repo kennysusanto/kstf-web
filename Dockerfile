@@ -50,13 +50,15 @@ RUN npm run build
 # This stage is used as the base for the backend-dev and test stages, since
 # there are common steps needed for each.
 ###################################################
-FROM base AS backend-dev
+FROM base AS backend-base
 COPY expressjs/package.json expressjs/package-lock.json ./
 RUN npm install
 COPY expressjs/spec ./spec
 COPY expressjs/src ./src
 RUN mkdir -p ./src/public/model
 RUN mkdir -p ./src/public/dataset
+
+FROM backend-base AS backend-dev
 CMD ["npm", "run", "dev2"]
 
 ###################################################
@@ -66,7 +68,7 @@ CMD ["npm", "run", "dev2"]
 # stage to allow the final image to not have the test dependencies or test
 # cases.
 ###################################################
-FROM backend-dev AS test
+FROM backend-dev AS backend-test
 RUN npm run test
 
 ###################################################
@@ -80,10 +82,12 @@ RUN npm run test
 ###################################################
 FROM base AS final
 ENV NODE_ENV=production
-COPY --from=test /usr/local/kstf-web/package.json /usr/local/kstf-web/package-lock.json ./
-RUN npm ci --production && \
+COPY --from=backend-base /usr/local/kstf-web/package.json /usr/local/kstf-web/package-lock.json ./
+RUN npm ci --omit=dev && \
     npm cache clean --force
 COPY expressjs/src ./src
-COPY --from=client-build /usr/local/kstf-web/dist ./src/static
-EXPOSE 3000
+COPY --from=client-build /usr/local/kstf-web/dist ./static
+RUN mkdir -p ./src/public/model
+RUN mkdir -p ./src/public/dataset
+EXPOSE 5172
 CMD ["node", "src/index.js"]

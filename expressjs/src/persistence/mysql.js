@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { uuidv4 } from "../helpers/misc.js";
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = "./src/persistence/mysql.js";
 const __dirname = path.dirname(__filename);
 
 dotenv.config({
