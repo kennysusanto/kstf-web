@@ -44,7 +44,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-kstf_web}
-      
+      MYSQL_USER: ${MYSQL_USER:-kstf_web}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     restart: unless-stopped
     healthcheck:
