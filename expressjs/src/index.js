@@ -46,7 +46,8 @@ app.use(
 app.use(bodyParser.json({ limit: "4mb" }));
 app.use(methodOverride());
 
-app.use(express.static("./static"));
+app.use(express.static(path.join(import.meta.dirname, "static")));
+
 app.use("/api/dataset", express.static("./src/public/dataset"));
 app.use("/api/model", express.static("./src/public/model"));
 
@@ -71,6 +72,9 @@ app.get("/api/version", (req, res) => {
     res.send("1.2.1");
 });
 
+app.get("*path", (req, res) => {
+    res.sendFile(path.join(import.meta.dirname, 'static', 'index.html'));
+});
 
 app.use(errorHandler);
 

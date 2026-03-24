@@ -8,7 +8,7 @@
         "build": "vite build",
         "lint": "eslint .",
         "preview": "vite preview",
-        "build-dev": "vite build && xcopy .\\dist ..\\expressjs\\static /s /e /y"
+        "build-dev": "vite build --base=/ && xcopy .\\dist ..\\expressjs\\src\\static /s /e /y"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",

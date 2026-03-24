@@ -75,9 +75,30 @@ Routing behavior:
 - `/api` and `/api/*` are load balanced across `backend-1` and `backend-2`
 - `/` is load balanced across `client-1` and `client-2`
 
+### Single backend + NGINX proxy (backend serves static)
+
+Use this stack when you want NGINX only as reverse proxy and let the backend serve frontend static files from the Dockerfile `final` image.
+
+1) Ensure `.env` includes:
+
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_PASSWORD`
+
+2) Start stack:
+
+`docker compose -f compose_static_nginx.yaml -p kstf-web-static up --build -d`
+
+3) Open app through NGINX:
+
+- `http://localhost:8081` (or custom `NGINX_HTTP_PORT`)
+
+Routing behavior:
+
+- `/api` and `/` are both proxied to `backend:5172`
+
 ### For Development Server
 
-`docker compose -f compose_development.yaml -p kstf-web-development up`
+`docker compose -f compose_development.yaml -p kstf-web-development up --build`
 
 ## Run Locally (Without Docker)
 

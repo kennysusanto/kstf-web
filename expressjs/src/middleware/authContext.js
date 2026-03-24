@@ -8,17 +8,17 @@ export default async function authContext(req, res, next) {
         const authorization = req.headers.authorization || "";
 
         if (!authorization.toLowerCase().startsWith("bearer ")) {
-            return next();
+            return next("NO AUTHORIZATION");
         }
-
+        
         const token = authorization.substring(7).trim();
         if (!token) {
-            return next();
+            return next("NO TOKEN");
         }
-
+        
         const user = await userRepository.getUserByAccessToken(token);
         if (!user) {
-            return next();
+            return next("USER NOT FOUND");
         }
 
         req.userId = user.id;

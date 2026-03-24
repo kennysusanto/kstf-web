@@ -19,6 +19,7 @@ FROM base AS client-base
 COPY reactjs/package.json reactjs/package-lock.json ./
 RUN npm install --legacy-peer-deps
 COPY reactjs/index.html reactjs/vite.config.js ./
+COPY reactjs/dist ./dist
 COPY reactjs/public ./public
 COPY reactjs/src ./src
 COPY reactjs/.env ./
@@ -92,7 +93,7 @@ COPY --from=backend-base /usr/local/kstf-web/package.json /usr/local/kstf-web/pa
 RUN npm ci --omit=dev && \
     npm cache clean --force
 COPY expressjs/src ./src
-COPY --from=client-build /usr/local/kstf-web/dist ./static
+COPY --from=client-build /usr/local/kstf-web/dist ./src/static
 RUN mkdir -p ./src/public/model
 RUN mkdir -p ./src/public/dataset
 EXPOSE 5172
