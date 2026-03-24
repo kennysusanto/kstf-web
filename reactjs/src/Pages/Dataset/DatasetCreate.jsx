@@ -10,6 +10,8 @@ import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import Constants from "../../Misc/Constants.jsx";
 
+import personPlaceholder from "../../assets/person-placeholder-224.svg";
+
 // import Container from "react-bootstrap/Container";
 // import Row from "react-bootstrap/Row";
 // import Col from "react-bootstrap/Col";
@@ -46,6 +48,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { getApiUrl } from "../../services/apiUrl.js";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import Stack from "@mui/material/Stack";
 
 let nextId = 0;
 
@@ -177,8 +180,8 @@ function App() {
 
     const clearPreview = () => {
         let image = document.querySelector(".img1");
-        image.setAttribute("src", "");
-        image.style.visibility = "hidden";
+        image.setAttribute("src", personPlaceholder);
+        // image.style.visibility = "hidden";
         setImage(null);
     };
 
@@ -241,16 +244,22 @@ function App() {
         images.push({ id: cc.id, uniqueID: uuidv4(), name: cc.name, data });
         // trainingDataInputs.push(imageFeatures);
         // trainingDataOutputs.push(cc.id);
-        classesTensors.push(imageTensor);
-        classesTensorLabels.push(cc.id);
+        // classesTensors.push(imageTensor);
+        // classesTensorLabels.push(cc.id);
         // classes.find((m) => m.id == cc.id).count++;
         // let dataCount = trainingDataOutputs.filter((m) => m == cc.id).length;
-        let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
-        if (dataCount > highestDataCount) {
-            setHighestDataCount(dataCount);
-        }
+        // let dataCount = classesTensorLabels.filter((m) => m == cc.id).length;
+        // if (dataCount > highestDataCount) {
+        //     setHighestDataCount(dataCount);
+        // }
         setDataChanged(true);
     };
+
+    const clearCapturedImages = () => {
+        setImages([]);
+        setClassesTensorLabels([]);
+        setClassesTensors([]);
+    }
 
     const uuidv4 = () => {
         return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
@@ -341,8 +350,8 @@ function App() {
     };
 
     const theme = useTheme();
-        const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
-        const cols = isSmallScreen ? 3 : 6;
+    const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+    const cols = isSmallScreen ? 3 : 6;
 
     return (
         <>
@@ -411,17 +420,19 @@ function App() {
                                 </Grid>
                                 <Grid size={6}>
                                     <div className="m-2">
-                                        <img className="img1" width="100%" />
-                                        {image != null ? (
+                                        <Stack spacing={1}>
+                                            <img className="img1" width="100%" src={personPlaceholder} />
                                             <Button
+                                                fullWidth
                                                 onClick={() => {
                                                     clearPreview();
                                                 }}
                                                 variant="contained"
+                                                disabled={image == null}
                                             >
                                                 Clear
                                             </Button>
-                                        ) : null}
+                                        </Stack>
                                     </div>
                                 </Grid>
                             </Grid>
@@ -442,7 +453,7 @@ function App() {
                                     <Button onClick={async () => {
                                         await captureImage(selectedClass);
                                         // scrollToBottom();
-                                    }} variant="contained" color="success">Capture</Button>
+                                    }} variant="contained" color="success" fullWidth>Capture</Button>
                                     <ImageList sx={{ maxHeight: "220px" }} cols={cols} rowHeight={80}>
                                         {images.map((item) => (
                                             <ImageListItem
@@ -470,17 +481,22 @@ function App() {
                                     </ImageList>
                                 </Grid>
                                 <Grid size={12}>
-                                    {mutation.isPending ? (
-                                        "Saving..."
-                                    ) : (
-                                        <>
-                                            <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged || mutation.isPending}>
-                                                Save
-                                            </Button>
-                                            {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
-                                            {mutation.isSuccess ? <span>Save success!</span> : null}
-                                        </>
-                                    )}
+                                    <Stack spacing={1} direction="row">
+                                        <Button onClick={clearCapturedImages} variant="outlined" color="error" disabled={images.length == 0}>
+                                            Clear All
+                                        </Button>                                    
+                                        {mutation.isPending ? (
+                                            "Saving..."
+                                        ) : (
+                                            <>
+                                                <Button onClick={saveToServer} variant="contained" color="success" disabled={images.length == 0 || !dataChanged || mutation.isPending}>
+                                                    Save
+                                                </Button>
+                                                {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}
+                                                {mutation.isSuccess ? <span>Save success!</span> : null}
+                                            </>
+                                        )}
+                                    </Stack>
                                 </Grid>
                             </Grid>
                         </CardContent>

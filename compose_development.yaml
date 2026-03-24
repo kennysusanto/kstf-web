@@ -85,6 +85,10 @@ services:
                 - path: ./expressjs/src
                   action: sync
                   target: /usr/local/kstf-web/src
+                  ignore: 
+                    - ./expressjs/src/public
+                    - /usr/local/kstf-web/src/public
+                    - ./expressjs/node_modules
                 - path: ./expressjs/package.json
                   action: rebuild
         labels:

@@ -1,0 +1,12 @@
+<svg width="224" height="224" viewBox="0 0 224 224" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Person Placeholder</title>
+  <desc id="desc">Grey person avatar placeholder</desc>
+
+  <rect width="224" height="224" rx="16" fill="#E5E7EB"/>
+
+  <circle cx="112" cy="82" r="34" fill="#9CA3AF"/>
+
+  <path d="M48 188C48 152.654 76.6543 124 112 124C147.346 124 176 152.654 176 188V196H48V188Z" fill="#9CA3AF"/>
+
+  <rect x="12" y="12" width="200" height="200" rx="12" stroke="#D1D5DB" stroke-width="2"/>
+</svg>

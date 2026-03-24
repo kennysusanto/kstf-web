@@ -9,6 +9,7 @@ import * as faceDetection from "@tensorflow-models/face-detection";
 import * as tf from "@tensorflow/tfjs";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import Constants from "../Misc/Constants.jsx";
+import personPlaceholder from "../assets/person-placeholder-224.svg";
 
 // import Container from "react-bootstrap/Container";
 // import Row from "react-bootstrap/Row";
@@ -49,6 +50,7 @@ import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../services/apiUrl.js";
 import { AuthContext } from "../context/AuthContext.jsx";
+import Stack from "@mui/material/Stack";
 
 let nextId = 0;
 
@@ -254,8 +256,8 @@ function App() {
 
     const clearPreview = () => {
         let image = document.querySelector(".img1");
-        image.setAttribute("src", "");
-        image.style.visibility = "hidden";
+        image.setAttribute("src", personPlaceholder);
+        // image.style.visibility = "hidden";
         setImage(null);
     };
 
@@ -444,22 +446,14 @@ function App() {
                                 </Grid>
                                 <Grid size={6}>
                                     <div className="m-2">
-                                        <img className="img1" width="100%" />
-                                        {image != null ? (
-                                            <Button
-                                                onClick={() => {
-                                                    clearPreview();
-                                                }}
-                                                variant="contained"
-                                            >
-                                                Clear
-                                            </Button>
-                                        ) : null}
-                                        {predictRes === undefined || !capturing ? null : (
-                                            <p className="mt-2">
-                                                Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
-                                            </p>
-                                        )}
+                                        <Stack spacing={1}>
+                                            <img className="img1" width="100%" src={personPlaceholder} />
+                                            {predictRes === undefined || !capturing ? null : (
+                                                <p className="mt-2">
+                                                    Predicted {predictRes.name} ({predictRes.confidence}%) in {predictRes.spent}ms
+                                                </p>
+                                            )}
+                                        </Stack>
                                     </div>
                                 </Grid>
                             </Grid>
@@ -481,9 +475,15 @@ function App() {
                                                 <ListItemButton
                                                     key={m.id}
                                                     onClick={() => {
-                                                        setModelValue(`${m.id}_${m.model_name}`);
+                                                        let curModelValue = `${m.id}_${m.model_name}`;
                                                         setCapturing(false);
                                                         capturingRef.current = false;
+                                                        if (modelValue == curModelValue) {
+                                                            setModelValue("");
+                                                        }
+                                                        else {
+                                                            setModelValue(`${m.id}_${m.model_name}`);
+                                                        }
                                                         scrollToBottom();
                                                     }}
                                                     selected={modelValue == `${m.id}_${m.model_name}`}

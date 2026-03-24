@@ -59,6 +59,7 @@ import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { useNavigate } from "react-router";
+import Stack from "@mui/material/Stack";
 
 
 let nextId = 0;
@@ -89,12 +90,13 @@ function App() {
     const [modelName, setModelName] = useState("");
     const [prevModelName, setPrevModelName] = useState("");
     const [numberOfEpochs, setNumberOfEpochs] = useState(5);
-    const [numberOfAugmentations, setNumberOfAugmentations] = useState(5);
+    const [numberOfAugmentations, setNumberOfAugmentations] = useState(1);
     const [showDialog, setShowDialog] = useState(false);
     const [dialogData, setDialogData] = useState(null);
     const [models, setModels] = useState([]);
     const [samples, setSamples] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadingText, setLoadingText] = useState("");
     const [logs, setLogs] = useState([]);
     const [localImageBinaries, setLocalImageBinaries] = useState({});
 
@@ -247,8 +249,12 @@ function App() {
     const startProcessingImages = async (isForTraining) => {
         console.time("Processing images");
         const imageBinaries = {};
+        let i = 1;
         for (const g of datasetImages) {
+            setLoadingText(`Processing dataset ${i} of ${datasetImages.length}`);
+            
             g.count = g.data.length;
+            let j = 1;
             for (const file of g.data) {
                 let curGroup = {
                     id: g.id,
@@ -256,11 +262,14 @@ function App() {
                     datasetClassName: g.name,
                     datasetImageName: file.name,
                 };
+                setLoadingText(`Fetching image file ${j} of ${g.data.length} for dataset ${i}`);
                 let { fetchBlob, bmp } = await getRealImage(curGroup, imageBinaries)
                 // console.log(fetchBlob, bmp);
                 if (isForTraining) {
                     await processImage(curGroup, bmp);
                 }
+                setLoadingText(`Augmenting images ${j} of ${g.data.length} for dataset ${i}`);
+                j++;
                 let augmentedBmps = await getAugmentedImages(curGroup, fetchBlob, imageBinaries);
                 // console.log(augmentedBmps);
                 if (isForTraining) {
@@ -269,6 +278,7 @@ function App() {
                     }
                 }
             }
+            i++;
         }
         setLocalImageBinaries(imageBinaries);
         console.timeEnd("Processing images");
@@ -305,8 +315,10 @@ function App() {
     const startTrain = async () => {
         setLoading(true);
         try {
+            setLoadingText("Processing images");
             // process images
             await startProcessingImages(true);
+            setLoadingText("Preparing model");
 
             setLogs([]);
             setTrainingComplete(false);
@@ -342,6 +354,7 @@ function App() {
             // console.log("oneHotOutputs", await oneHotOutputs.data());
             // console.log("inputsAsTensor", await inputsAsTensor.data());
 
+            setLoadingText(`Training model ${modelName} on ${trainingDataInputs.length} samples with ${numberOfEpochs} epochs`);
             console.log("Training on ", trainingDataInputs.length, " samples across ", datasetImages.length, " classes with ", numberOfEpochs, " epochs and ", numberOfAugmentations, " augmentations per image.");
 
             let results = await model.fit(inputsAsTensor, oneHotOutputs, {
@@ -372,6 +385,7 @@ function App() {
             // await combinedModel.save("downloads://my-model");
             let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
             // console.log(getApiUrl(`/api/train`));
+            setLoadingText("Saving model");
             let resp = await model.save(domain + getApiUrl(`/api/model-upload`));
 
             let newName = modelName;
@@ -395,6 +409,7 @@ function App() {
             textToast("Training complete!");
             scrollToBottom();
         } finally {
+            setLoadingText("");
             setLoading(false);
         }
     };
@@ -526,8 +541,8 @@ function App() {
                                                             label="Number of Augmentations"
                                                             onChange={(e) => setNumberOfAugmentations(e.target.value)}
                                                             type="number"
-                                                            slotProps={{ htmlInput: { min: 5 } }}
-                                                            placeholder="5"
+                                                            slotProps={{ htmlInput: { min: 1 } }}
+                                                            placeholder="1"
                                                             variant="filled"
                                                             fullWidth
                                                         />
@@ -683,7 +698,12 @@ function App() {
                 </DialogActions>
             </Dialog>
             <Backdrop open={loading} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-                <CircularProgress color="inherit" />
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                    <CircularProgress color="inherit" />
+                    <Typography color="inherit" variant="h5">
+                        {loadingText}
+                    </Typography>
+                </Stack>
             </Backdrop>
             <ToastContainer limit={5} />
         </>
