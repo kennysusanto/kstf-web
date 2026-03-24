@@ -84,13 +84,15 @@ Use this stack when you want NGINX only as reverse proxy and let the backend ser
 - `MYSQL_ROOT_PASSWORD`
 - `MYSQL_PASSWORD`
 
-2) Start stack:
+2) Ensure /nginx has `nginx.crt` and `nginx.key` for HTTPS connection
+
+3) Start stack:
 
 `docker compose -f compose_static_nginx.yaml -p kstf-web-static up --build -d`
 
-3) Open app through NGINX:
+4) Open app through NGINX:
 
-- `http://localhost:8081` (or custom `NGINX_HTTP_PORT`)
+- `http://localhost` (or custom `NGINX_HTTP_PORT`)
 
 Routing behavior:
 

@@ -5,6 +5,7 @@ import cors from "cors";
 import birdsRouter from "./routers/birds.js";
 import datasetRouter from "./routers/dataset.js";
 import trainRouter from "./routers/train.js";
+import modelUploadRouter from "./routers/model-upload.js";
 import authRouter from "./routers/auth.js";
 import tenantRouter from "./routers/tenant.js";
 import userRouter from "./routers/user.js";
@@ -31,7 +32,8 @@ const corsOptions = {
         "http://192.168.0.187:5173",
         "https://192.168.1.5:5173",
         "https://ksdedicated.work",
-        "https://api.ksdedicated.work"
+        "https://api.ksdedicated.work",
+        "http://192.168.15.192",
     ],
 };
 
@@ -66,6 +68,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/birds", birdsRouter);
 app.use("/api/dataset", authContext, datasetRouter);
 app.use("/api/train", authContext, trainRouter);
+app.use("/api/model-upload", modelUploadRouter); // no auth on purpose
 app.use("/api/tenant", authContext, tenantRouter);
 app.use("/api/user", authContext, userRouter);
 app.get("/api/version", (req, res) => {

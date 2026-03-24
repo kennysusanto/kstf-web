@@ -370,9 +370,9 @@ function App() {
             // combinedModel.summary();
             console.log("TRAINING COMPLETE");
             // await combinedModel.save("downloads://my-model");
-            // let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
+            let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
             // console.log(getApiUrl(`/api/train`));
-            let resp = await model.save(getApiUrl(`/api/train`));
+            let resp = await model.save(domain + getApiUrl(`/api/model-upload`));
 
             let newName = modelName;
             for (const r of resp.responses) {
