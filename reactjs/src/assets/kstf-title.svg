@@ -1,0 +1,42 @@
+<svg width="420" height="96" viewBox="0 0 420 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">KSTF</title>
+  <desc id="desc">KSTF corporate wordmark</desc>
+  <defs>
+    <linearGradient id="frameStroke" x1="0" y1="8" x2="420" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B3A75" />
+      <stop offset="0.55" stop-color="#114D94" />
+      <stop offset="1" stop-color="#1F6EC7" />
+    </linearGradient>
+    <linearGradient id="textFill" x1="74" y1="20" x2="350" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A2C59" />
+      <stop offset="0.5" stop-color="#134E96" />
+      <stop offset="1" stop-color="#2A7FE0" />
+    </linearGradient>
+    <linearGradient id="shine" x1="210" y1="10" x2="210" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <filter id="wordShadow" x="34" y="16" width="352" height="68" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#041327" flood-opacity="0.28" />
+    </filter>
+  </defs>
+
+  <rect x="2" y="6" width="416" height="84" rx="14" fill="#F8FBFF" />
+  <rect x="2" y="6" width="416" height="84" rx="14" stroke="url(#frameStroke)" stroke-width="3" />
+  <rect x="8" y="12" width="404" height="22" rx="10" fill="url(#shine)" />
+
+  <g filter="url(#wordShadow)">
+    <text
+      x="210"
+      y="63"
+      text-anchor="middle"
+      font-family="Montserrat, Inter, Segoe UI, Arial, sans-serif"
+      font-size="52"
+      font-weight="900"
+      letter-spacing="6"
+      fill="url(#textFill)"
+    >
+      KSTF
+    </text>
+  </g>
+</svg>

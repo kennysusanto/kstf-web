@@ -49,7 +49,7 @@ import apiClient from "../../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "../../services/apiUrl.js";
 import { AuthContext } from "../../context/AuthContext.jsx";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
@@ -57,6 +57,8 @@ let nextId = 0;
 
 function App() {
     const { user } = useContext(AuthContext);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     // const camera = useRef(null);
     const [image, setImage] = useState(null);
@@ -402,6 +404,13 @@ function App() {
         },
         // enabled: false,
     });
+
+    useEffect(() => {
+        if (location.state?.refetchDatasetImages) {
+            refetch();
+            navigate(location.pathname, { replace: true, state: null });
+        }
+    }, [location.pathname, location.state, navigate, refetch]);
 
     // useEffect(() => {
     //     refetch();

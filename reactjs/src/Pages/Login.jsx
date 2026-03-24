@@ -30,6 +30,7 @@ import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import apiClient from "../services/apiClient.js";
 import { AuthContext } from "../context/AuthContext.jsx";
 import { getApiUrl } from "../services/apiUrl.js";
+import kstfTitle from "../assets/kstf-title.svg";
 import "./Login.css";
 
 function App() {
@@ -120,9 +121,12 @@ function App() {
                 <Stack spacing={3} component="form" noValidate onSubmit={handleSubmit}>
                     <Box className="login-branding" sx={{ textAlign: "center" }}>
                         <BadgeOutlined fontSize="large" />
-                        <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                            KSTF
-                        </Typography>
+                        <Box
+                            component="img"
+                            src={kstfTitle}
+                            alt="KSTF"
+                            sx={{ width: { xs: 180, sm: 220 }, height: "auto", mt: 1, mb: 1 }}
+                        />
                         <Typography variant="body2" color="text.secondary">
                             Face Recognition Platform
                         </Typography>

@@ -323,13 +323,21 @@ function App() {
         },
     });
 
-    const saveToServer = () => {
-        mutation.mutate({
-            images,
-            classes,
-        });
-        setDataChanged(false);
-        navigate("/dataset");
+    const saveToServer = async () => {
+        try {
+            await mutation.mutateAsync({
+                images,
+                classes,
+            });
+            setDataChanged(false);
+            navigate("/dataset", {
+                state: {
+                    refetchDatasetImages: true,
+                },
+            });
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const theme = useTheme();
@@ -466,7 +474,7 @@ function App() {
                                         "Saving..."
                                     ) : (
                                         <>
-                                            <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged}>
+                                            <Button onClick={saveToServer} variant="contained" color="success" disabled={!dataChanged || mutation.isPending}>
                                                 Save
                                             </Button>
                                             {mutation.isError ? <span>An error has occurred: {mutation.error.message}</span> : null}

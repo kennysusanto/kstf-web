@@ -2,11 +2,11 @@ import { useContext, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { AuthContext } from "../context/AuthContext.jsx";
 import ConfirmLogoutModal from "../Components/shared/ConfirmLogoutModal.jsx";
+import kstfTitle from "../assets/kstf-title.svg";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 
 const navItems = [
     { to: "/", label: "Home" },
@@ -25,9 +25,7 @@ export default function AppShell() {
         <Container sx={{ py: 3 }}>
             <Stack spacing={2}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={1} justifyContent="space-between" alignItems={{ xs: "stretch", md: "center" }}>
-                    <Typography variant="h5" component="h1">
-                        KSTF
-                    </Typography>
+                    <Box component="img" src={kstfTitle} alt="KSTF" sx={{ width: { xs: 130, md: 160 }, height: "auto" }} />
 
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         {navItems.map((item) => (

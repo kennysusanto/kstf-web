@@ -74,9 +74,9 @@ services:
             - ./expressjs/src/public:/usr/local/kstf-web/src/public
         environment:
             MYSQL_HOST: mysql
-            MYSQL_USER: root
-            MYSQL_PASSWORD: root
-            MYSQL_DB: kstf-web
+            MYSQL_USER: kenny
+            MYSQL_PASSWORD: kenny
+            MYSQL_DB: kstf_web
         depends_on:
             mysql:
                 condition: service_healthy
@@ -144,7 +144,9 @@ services:
             - kstf-web-mysql-data:/var/lib/mysql
         environment:
             MYSQL_ROOT_PASSWORD: root
-            MYSQL_DATABASE: kstf-web
+            MYSQL_DATABASE: kstf_web
+            MYSQL_USER: kenny
+            MYSQL_PASSWORD: kenny
         healthcheck:
             test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
             interval: 5s

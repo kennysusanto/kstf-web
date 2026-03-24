@@ -100,7 +100,7 @@ Routing behavior:
 
 ### For Development Server
 
-`docker compose -f compose_development.yaml -p kstf-web-development up --build`
+`docker compose -f compose_development.yaml -p kstf-web-development watch`
 
 ## Run Locally (Without Docker)
 
