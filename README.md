@@ -75,7 +75,7 @@ Routing behavior:
 - `/api` and `/api/*` are load balanced across `backend-1` and `backend-2`
 - `/` is load balanced across `client-1` and `client-2`
 
-### Single backend + NGINX proxy (backend serves static)
+### Single backend + NGINX proxy (backend serves static) using HTTPS
 
 Use this stack when you want NGINX only as reverse proxy and let the backend serve frontend static files from the Dockerfile `final` image.
 
