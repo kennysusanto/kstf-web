@@ -53,7 +53,29 @@ Debug phpMyAdmin start command:
 
 `docker compose --profile debug up -d phpmyadmin`
 
-### for development server
+### Round-robin stack (NGINX + 2x client + 2x backend)
+
+Use the dedicated compose file to run two frontend containers and two backend containers behind NGINX round-robin load balancing.
+
+1) Ensure `.env` includes:
+
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_PASSWORD`
+
+2) Start stack:
+
+`docker compose -f compose_roundrobin.yaml -p kstf-web-rr up --build -d`
+
+3) Open app through NGINX:
+
+- `http://localhost:8080` (or custom `NGINX_HTTP_PORT`)
+
+Routing behavior:
+
+- `/api` and `/api/*` are load balanced across `backend-1` and `backend-2`
+- `/` is load balanced across `client-1` and `client-2`
+
+### For Development Server
 
 `docker compose -f compose_development.yaml -p kstf-web-development up`
 
