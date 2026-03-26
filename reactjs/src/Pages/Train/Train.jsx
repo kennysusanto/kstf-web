@@ -266,15 +266,19 @@ function App() {
                 let { fetchBlob, bmp } = await getRealImage(curGroup, imageBinaries)
                 // console.log(fetchBlob, bmp);
                 if (isForTraining) {
+                    setLoadingText(`Processing image file ${j} of ${g.data.length} for dataset ${i}`);
                     await processImage(curGroup, bmp);
                 }
                 setLoadingText(`Augmenting images ${j} of ${g.data.length} for dataset ${i}`);
                 j++;
+                let k = 1;
                 let augmentedBmps = await getAugmentedImages(curGroup, fetchBlob, imageBinaries);
                 // console.log(augmentedBmps);
                 if (isForTraining) {
                     for (const augmentedBmp of augmentedBmps) {
+                        setLoadingText(`Processing augmented image ${k + 1} of ${augmentedBmps.length} for image ${j} of dataset ${i}`);
                         await processImage(curGroup, augmentedBmp);
+                        k++;
                     }
                 }
             }
@@ -386,7 +390,11 @@ function App() {
             let domain = window.location.protocol + "//" + window.location.hostname + (window.location.port != "" ? ":" + window.location.port : "");
             // console.log(getApiUrl(`/api/train`));
             setLoadingText("Saving model");
-            let resp = await model.save(domain + getApiUrl(`/api/model-upload`));
+            let urlPath = getApiUrl(`/api/model-upload`);
+            if (urlPath.includes("http")) {
+                domain = "";
+            }
+            let resp = await model.save(domain + urlPath);
 
             let newName = modelName;
             for (const r of resp.responses) {
@@ -620,8 +628,8 @@ function App() {
                                     <List style={listStyle}>
                                         {modelsQuery.status === "pending" ? <span>Loading...</span> : null}
                                         {modelsQuery.status === "success"
-                                            ? models.map((m) => (
-                                                <div key={m.uid}>
+                                            ? models.map((m) => (                                                
+                                                <div key={m.id}>
                                                     <ListItemButton
                                                         key={m.uid}
                                                         onClick={() => {
