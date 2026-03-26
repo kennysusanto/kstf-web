@@ -437,6 +437,7 @@ function App() {
         setLoading(true);
         const data = await apiClient.get(getApiUrl(`/api/dataset`));
         let classGroups = data.data.data;
+        setcountedDatasetClassID([]);
         // setSamples([]);
         for (const g of classGroups) {
             g.count = g.data.length;
@@ -451,6 +452,7 @@ function App() {
                 });
             }
         }
+        console.log(`Current highest data count among classes: ${highestDataCount}`);
         setLoading(false);
         return classGroups;
     };
@@ -501,9 +503,14 @@ function App() {
                                 <CardContent>
                                     <Grid container spacing={2} columns={12}>
                                         <Grid size={12}>
-                                            <Typography variant="h6" component="h3">
-                                                Classes
-                                            </Typography>
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="h6" component="h3">
+                                                    Dataset
+                                                </Typography>
+                                                <Button onClick={async () => {
+                                                    await fetchQuery();
+                                                }} variant="contained" size="small">Refresh</Button>
+                                            </Box>
                                         </Grid>
                                         <Grid size={12}>
                                             <div>
