@@ -191,3 +191,12 @@ Frontend runs on `http://localhost:5173`.
 - [x] Training data augmentation feature (rotation and blur variants)
 - [x] Update UI/UX
 - [ ] Caching dataset in Train page
+
+## cloudflare axioo note to self
+
+- cloudflare tunnel kenny-axioo
+- run cloudflared service in windows
+- run nginx.exe process for reverse-proxy on localhost:84
+- cd to `reactjs/` and run `npm run build-dev` to get static files to `expressjs/src/static/` dir
+- cd to `expressjs/` and run `node src/index.js` to serve
+

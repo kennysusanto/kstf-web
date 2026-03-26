@@ -41,6 +41,7 @@ function App() {
     const [message, setMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [apiConnected, setApiConnected] = useState(null);
+    const [apiVersion, setApiVersion] = useState("");
 
     const validateEmail = (value) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
@@ -52,13 +53,15 @@ function App() {
         const checkApiConnection = async () => {
             try {
                 console.log(getApiUrl("/api/version"));
-                await apiClient.get(getApiUrl("/api/version"), { timeout: 5000 });
+                let res = await apiClient.get(getApiUrl("/api/version"), { timeout: 5000 });
                 if (isMounted) {
                     setApiConnected(true);
+                    setApiVersion(res.data);
                 }
             } catch (error) {
                 if (isMounted) {
                     setApiConnected(false);
+                    setApiVersion("");
                 }
             }
         };
@@ -133,7 +136,7 @@ function App() {
                     </Box>
 
                     <Chip
-                        label={apiConnected === null ? "API: Checking connection..." : apiConnected ? "API: Connected" : "API: Cannot connect"}
+                        label={apiConnected === null ? "API: Checking connection..." : apiConnected ? `API: Connected v${apiVersion}` : "API: Cannot connect"}
                         color={apiConnected === false ? "error" : "default"}
                         variant="outlined"
                         sx={{ alignSelf: "center" }}

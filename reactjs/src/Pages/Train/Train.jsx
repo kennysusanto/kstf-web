@@ -289,31 +289,36 @@ function App() {
         return imageBinaries;
     };
 
-    useEffect(() => {
-        (async () => {
-            await loadMobileNetFeatureModel();
-        })();
-    }, []);
-
     const loadMobileNetFeatureModel = async () => {
-        const URL = "https://storage.googleapis.com/jmstore/TensorFlowJS/EdX/SavedModels/mobilenet-v2/model.json";
-        mobilenet = await tf.loadLayersModel(URL);
-        // STATUS.innerText = "MobileNet v2 loaded successfully!";
-        // mobilenet.summary(null, null, (line) => {
-        //     console.log(line);
-        // });
+        setLoading(true);
+        setLoadingText("Loading MobileNet V2 Model");
+        try {
+            const URL = "https://storage.googleapis.com/jmstore/TensorFlowJS/EdX/SavedModels/mobilenet-v2/model.json";
+            mobilenet = await tf.loadLayersModel(URL);
+            // STATUS.innerText = "MobileNet v2 loaded successfully!";
+            // mobilenet.summary(null, null, (line) => {
+            //     console.log(line);
+            // });
+    
+            const layer = mobilenet.getLayer("global_average_pooling2d_1");
+            let nmobileNetBase = tf.model({ inputs: mobilenet.inputs, outputs: layer.output });
+            setMobileNetBase(nmobileNetBase);
+            // mobileNetBase.summary();
+            console.log("MobileNet v2 loaded successfully!", nmobileNetBase);
+    
+            // Warm up the model by passing zeros through it once.
+            tf.tidy(function () {
+                let answer = nmobileNetBase.predict(tf.zeros([1, Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH, 3]));
+                // console.log(answer.shape);
+            });
 
-        const layer = mobilenet.getLayer("global_average_pooling2d_1");
-        let nmobileNetBase = tf.model({ inputs: mobilenet.inputs, outputs: layer.output });
-        setMobileNetBase(nmobileNetBase);
-        // mobileNetBase.summary();
-        console.log("MobileNet v2 loaded successfully!", nmobileNetBase);
-
-        // Warm up the model by passing zeros through it once.
-        tf.tidy(function () {
-            let answer = nmobileNetBase.predict(tf.zeros([1, Constants.MOBILE_NET_INPUT_HEIGHT, Constants.MOBILE_NET_INPUT_WIDTH, 3]));
-            // console.log(answer.shape);
-        });
+        }
+        catch (err) {
+            console.error("Error loadMobileNetFeatureModel", err);
+        }
+        finally {
+            setLoading(false);
+        }
     };
 
     const startTrain = async () => {
@@ -588,6 +593,7 @@ function App() {
                                                                 textToast("Training started");
 
                                                                 setTimeout(async () => {
+                                                                    await loadMobileNetFeatureModel();
                                                                     await startTrain();
                                                                 }, 500);
                                                             }}

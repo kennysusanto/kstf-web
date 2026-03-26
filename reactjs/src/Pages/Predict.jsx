@@ -45,6 +45,8 @@ import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import apiClient from "../services/apiClient.js";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -89,6 +91,8 @@ function App() {
     const [modelValue, setModelValue] = useState("");
     const [useModel, setUseModel] = useState(undefined);
     const [sample, setSample] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [loadingText, setLoadingText] = useState("");
 
     function handleWindowSizeChange() {
         setBrowserWidth(window.innerWidth);
@@ -335,20 +339,28 @@ function App() {
         if (modelValue === "") {
             return;
         }
-        let tenantID = user?.tenant_id;
-        let tenantName = user?.tenant_name;
-        console.log("Loading model value", getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
-        (async () => {
-            const model = await tf.loadLayersModel(getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
-            model.summary();
-            setUseModel(model);
 
-            setCapturing(!capturing);
-            capturingRef.current = !capturing;
-            scrollToBottom();
+        (async () => {
+            let tenantID = user?.tenant_id;
+            let tenantName = user?.tenant_name;
+            console.log("Loading model value", getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
+
+            try {
+                setLoading(true);
+                setLoadingText("Loading model...");
+                const model = await tf.loadLayersModel(getApiUrl(`/api/model/${tenantID}_${tenantName}/${modelValue}/model.json`));
+                model.summary();
+                setUseModel(model);
+
+                setCapturing(!capturing);
+                capturingRef.current = !capturing;
+                scrollToBottom();
+            } finally {
+                setLoading(false);
+            }
+            // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.json
+            // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.weights.bin
         })();
-        // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.json
-        // http://localhost:5172/model/f755f2b4-dcd3-49e1-b0a8-23976c0f13e0/model.weights.bin
     }, [modelValue]);
 
     const {
@@ -501,6 +513,14 @@ function App() {
                     </Card>
                 </Grid>
             </Grid>
+            <Backdrop open={loading} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                    <CircularProgress color="inherit" />
+                    <Typography color="inherit" variant="h5">
+                        {loadingText}
+                    </Typography>
+                </Stack>
+            </Backdrop>
             <ToastContainer limit={5} />
         </>
     );

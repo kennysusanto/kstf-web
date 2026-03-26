@@ -16,6 +16,7 @@ import https from "https";
 import fs from "fs";
 import db from "./persistence/index.js";
 import authContext from "./middleware/authContext.js";
+import pjson from '../package.json' with { type: "json" };
 
 // const privateKey = fs.readFileSync("./cloudflare-private-key.pem", "utf8");
 // const certificate = fs.readFileSync("./cloudflare-origin-cert.pem", "utf8");
@@ -26,6 +27,9 @@ const port = Number(process.env.PORT) || 5172;
 
 const corsOptions = {
     origin: [
+        "http://localhost:5172",
+        // "http://localhost:84",
+        "https://mobile.ksdedicated.work",
         "http://localhost:5173",
         "https://localhost:5173",
         "https://192.168.0.187:5173",
@@ -72,7 +76,7 @@ app.use("/api/model-upload", modelUploadRouter); // no auth on purpose
 app.use("/api/tenant", authContext, tenantRouter);
 app.use("/api/user", authContext, userRouter);
 app.get("/api/version", (req, res) => {
-    res.send("1.2.1");
+    res.send(pjson.version);
 });
 
 app.get("*path", (req, res) => {
